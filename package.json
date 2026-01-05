@@ -10,7 +10,8 @@
     "seed": "tsx prisma/seed.ts",
     "test": "vitest",
     "test:watch": "vitest --watch",
-    "test:coverage": "vitest --coverage"
+    "test:coverage": "vitest --coverage",
+    "verify:buckets": "tsx scripts/verify-buckets.ts"
   },
   "prisma": {
     "seed": "tsx prisma/seed.ts"
@@ -83,6 +84,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitest/coverage-v8": "^2.1.8",
+    "dotenv": "^17.2.3",
     "postcss": "^8.5",
     "prisma": "7.2.0",
     "tailwindcss": "^4.1.9",

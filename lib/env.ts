@@ -11,7 +11,8 @@ export const env = {
     from: process.env.MAIL_FROM || "Fleet Rental <noreply@fleet.com>",
   },
   supabase: {
-    url: process.env.SUPABASE_URL!,
+    url: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL!,
+    anonKey: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY!,
     bucketDriver: process.env.SUPABASE_BUCKET_DRIVER || "driver-kyc",
     bucketVehicle: process.env.SUPABASE_BUCKET_VEHICLE || "vehicle-docs",
