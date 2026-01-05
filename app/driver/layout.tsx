@@ -1,0 +1,81 @@
+import type React from "react"
+import { requireDriver } from "@/lib/permissions"
+import { Button } from "@/components/ui/button"
+import { signOut } from "@/lib/auth"
+import Link from "next/link"
+import { Car, User, CreditCard, MapPin } from "lucide-react"
+
+export default async function DriverLayout({ children }: { children: React.ReactNode }) {
+  const session = await requireDriver()
+
+  async function handleSignOut() {
+    "use server"
+    await signOut()
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <header className="border-b bg-card">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Car className="h-6 w-6" />
+              <h1 className="text-xl font-bold">Fleet Rental</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">{session.user.email}</span>
+              <form action={handleSignOut}>
+                <Button variant="outline" size="sm" type="submit">
+                  Sign Out
+                </Button>
+              </form>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <div className="container mx-auto px-4 py-6">
+        <nav className="flex gap-4 mb-6 border-b">
+          <Link
+            href="/driver"
+            className="px-4 py-2 text-sm font-medium hover:text-primary border-b-2 border-transparent hover:border-primary"
+          >
+            <div className="flex items-center gap-2">
+              <Car className="h-4 w-4" />
+              Dashboard
+            </div>
+          </Link>
+          <Link
+            href="/driver/profile"
+            className="px-4 py-2 text-sm font-medium hover:text-primary border-b-2 border-transparent hover:border-primary"
+          >
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4" />
+              Profile
+            </div>
+          </Link>
+          <Link
+            href="/driver/payments"
+            className="px-4 py-2 text-sm font-medium hover:text-primary border-b-2 border-transparent hover:border-primary"
+          >
+            <div className="flex items-center gap-2">
+              <CreditCard className="h-4 w-4" />
+              Payments
+            </div>
+          </Link>
+          <Link
+            href="/driver/verify-location"
+            className="px-4 py-2 text-sm font-medium hover:text-primary border-b-2 border-transparent hover:border-primary"
+          >
+            <div className="flex items-center gap-2">
+              <MapPin className="h-4 w-4" />
+              Verify Location
+            </div>
+          </Link>
+        </nav>
+
+        <main>{children}</main>
+      </div>
+    </div>
+  )
+}
