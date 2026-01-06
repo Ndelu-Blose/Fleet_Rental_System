@@ -2,11 +2,20 @@ import type React from "react"
 import { requireAdmin } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
 import { signOut } from "@/lib/auth"
+import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus, UserCircle } from "lucide-react"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin()
+
+  // Fetch fresh email from database to ensure it's up-to-date after email changes
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { email: true },
+  })
+
+  const displayEmail = user?.email || session.user.email
 
   async function handleSignOut() {
     "use server"
@@ -23,7 +32,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <h1 className="text-xl font-bold">FleetHub Admin</h1>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-muted-foreground">{session.user.email}</span>
+              <span className="text-sm text-muted-foreground">{displayEmail}</span>
               <form action={handleSignOut}>
                 <Button variant="outline" size="sm" type="submit">
                   Sign Out
