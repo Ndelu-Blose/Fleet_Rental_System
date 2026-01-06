@@ -76,12 +76,14 @@ async function verifyBuckets() {
 }
 
 verifyBuckets()
-  .then((success) => {
-    process.exit(success ? 0 : 1)
+.then(async (success) => {
+     // give Node/undici time to clean up open handles on Windows (Node 24)
+     await new Promise((r) => setTimeout(r, 50))
+     process.exit(success ? 0 : 1)
   })
   .catch((error) => {
     console.error("❌ Script failed:", error)
-    process.exit(1)
+    process.exitCode = 1
   })
 
 
