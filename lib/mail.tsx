@@ -19,6 +19,7 @@ export async function sendActivationEmail(email: string, name: string, token: st
     to: email,
     subject: "Activate Your FleetHub Account",
     html: activationEmailTemplate(name, activationUrl),
+    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
 }
 
@@ -36,6 +37,7 @@ export async function sendPaymentReminderEmail(
     to: email,
     subject: `Payment Reminder: R ${amount} due ${formattedDate}`,
     html: paymentReminderTemplate(name, amount, formattedDate, vehicleReg),
+    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
 }
 
@@ -53,6 +55,7 @@ export async function sendPaymentOverdueEmail(
     to: email,
     subject: `URGENT: Payment Overdue - R ${amount}`,
     html: paymentOverdueTemplate(name, amount, formattedDate, vehicleReg),
+    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
 }
 
@@ -61,6 +64,7 @@ export async function sendDocumentApprovalEmail(email: string, name: string, doc
     to: email,
     subject: "Document Approved",
     html: documentApprovalTemplate(name, docType),
+    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
 }
 
@@ -74,6 +78,7 @@ export async function sendDocumentRejectionEmail(
     to: email,
     subject: "Document Rejected - Action Required",
     html: documentRejectionTemplate(name, docType, reviewNote),
+    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
 }
 
@@ -82,6 +87,7 @@ export async function sendVerificationCompleteEmail(email: string, name: string)
     to: email,
     subject: "Account Verified - Welcome!",
     html: verificationCompleteTemplate(name),
+    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
 }
 
@@ -90,6 +96,7 @@ export async function sendVerificationRejectedEmail(email: string, name: string,
     to: email,
     subject: "Verification Rejected",
     html: verificationRejectedTemplate(name, note),
+    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
 }
 
@@ -106,6 +113,7 @@ export async function sendContractCreatedEmail(
     to: email,
     subject: "Vehicle Assigned - Contract Created",
     html: contractCreatedTemplate(name, vehicleReg, amount, frequency),
+    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
 }
 
@@ -116,6 +124,7 @@ export async function sendPasswordResetEmail(email: string, name: string, token:
     to: email,
     subject: "Reset Your Password",
     html: passwordResetEmailTemplate(name, resetUrl),
+    // No replyTo for password reset (security)
   })
 }
 
@@ -130,6 +139,7 @@ export async function sendEmailChangeVerificationEmail(
     to: email,
     subject: "Verify Your New Email Address",
     html: emailChangeVerificationTemplate(name, verificationUrl),
+    // No replyTo for email change verification (security)
   })
 }
 
@@ -142,5 +152,6 @@ export async function sendEmailChangeConfirmationEmail(
     to: oldEmail,
     subject: "Email Address Changed",
     html: emailChangeConfirmationTemplate(name, oldEmail, newEmail),
+    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
 }

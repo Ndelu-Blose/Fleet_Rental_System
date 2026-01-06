@@ -7,12 +7,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Users, FileCheck, AlertTriangle, Wrench } from "lucide-react";
 import Link from "next/link";
 
-export default async function AdminDashboardPage({
-  searchParams,
-}: {
-  searchParams: { range?: "all" | "month" | "week" };
-}) {
-  const range = searchParams.range ?? "all";
+type Props = {
+  searchParams?: Promise<{ range?: "all" | "month" | "week" }>;
+};
+
+export default async function AdminDashboardPage({ searchParams }: Props) {
+  const sp = await searchParams;
+  const range = sp?.range ?? "all";
   const data = await getAdminDashboardData(range);
 
   const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`;

@@ -9,7 +9,16 @@ import crypto from "crypto"
 export async function POST(req: NextRequest) {
   try {
     const session = await requireAdmin()
-    const body = await req.json()
+    
+    let body;
+    try {
+      body = await req.json()
+    } catch (jsonError) {
+      return NextResponse.json(
+        { error: "Invalid JSON in request body" },
+        { status: 400 }
+      )
+    }
 
     // Validate input
     const validationResult = changeEmailSchema.safeParse(body)
@@ -77,8 +86,17 @@ export async function POST(req: NextRequest) {
       )
     } catch (emailError) {
       console.error("[Admin] Failed to send email verification:", emailError)
+      // Rollback the token/expiry if email fails
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          activationToken: null,
+          activationExpires: null,
+          emailChangePending: null,
+        },
+      })
       return NextResponse.json(
-        { error: "Failed to send verification email" },
+        { error: "Failed to send verification email. Please try again." },
         { status: 500 }
       )
     }
@@ -89,7 +107,28 @@ export async function POST(req: NextRequest) {
     })
   } catch (error) {
     console.error("[Admin] Change email error:", error)
-    return NextResponse.json({ error: "Failed to initiate email change" }, { status: 500 })
+    
+    // Provide more specific error messages
+    if (error instanceof Error) {
+      // Check for Prisma errors
+      if (error.message.includes("Unique constraint")) {
+        return NextResponse.json(
+          { error: "Email address is already in use" },
+          { status: 400 }
+        )
+      }
+      if (error.message.includes("Record to update not found")) {
+        return NextResponse.json(
+          { error: "User not found" },
+          { status: 404 }
+        )
+      }
+    }
+    
+    return NextResponse.json(
+      { error: "Failed to initiate email change. Please try again." },
+      { status: 500 }
+    )
   }
 }
 
