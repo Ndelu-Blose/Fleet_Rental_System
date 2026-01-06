@@ -6,12 +6,13 @@ type SendEmailProps = {
   subject: string
   html: string
   replyTo?: string
+  from?: string
 }
 
-export async function sendEmail({ to, subject, html, replyTo }: SendEmailProps) {
+export async function sendEmail({ to, subject, html, replyTo, from }: SendEmailProps) {
   try {
     const result = await resend.emails.send({
-      from: emailConfig.from,
+      from: from || emailConfig.from,
       to,
       subject,
       html,

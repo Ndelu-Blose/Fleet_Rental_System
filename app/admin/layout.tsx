@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button"
 import { signOut } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
-import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus, UserCircle } from "lucide-react"
+import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus, UserCircle, Settings } from "lucide-react"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin()
@@ -106,6 +106,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="flex items-center gap-2">
               <UserCircle className="h-4 w-4" />
               Profile
+            </div>
+          </Link>
+          <Link
+            href="/admin/settings"
+            className="px-4 py-2 text-sm font-medium hover:text-primary border-b-2 border-transparent hover:border-primary"
+          >
+            <div className="flex items-center gap-2">
+              <Settings className="h-4 w-4" />
+              Settings
             </div>
           </Link>
         </nav>

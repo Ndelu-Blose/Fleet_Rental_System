@@ -7,7 +7,7 @@ export const env = {
     url: process.env.NEXTAUTH_URL || "http://localhost:3000",
   },
   mail: {
-    resendApiKey: process.env.RESEND_API_KEY!,
+    resendApiKey: process.env.RESEND_API_KEY || "",
     from: process.env.MAIL_FROM || "FleetHub <noreply@fleethub.com>",
   },
   supabase: {
@@ -18,8 +18,9 @@ export const env = {
     bucketVehicle: process.env.SUPABASE_BUCKET_VEHICLE || "vehicle-docs",
   },
   stripe: {
-    secretKey: process.env.STRIPE_SECRET_KEY!,
-    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET!,
+    secretKey: process.env.STRIPE_SECRET_KEY || "",
+    webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || "",
+    publishableKey: process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "",
     successUrl: process.env.STRIPE_SUCCESS_URL || "http://localhost:3000/driver/payments?status=success",
     cancelUrl: process.env.STRIPE_CANCEL_URL || "http://localhost:3000/driver/payments?status=cancel",
   },

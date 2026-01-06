@@ -305,3 +305,12 @@ model Payment {
   @@index([dueDate])
   @@index([status])
 }
+
+model AppSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}

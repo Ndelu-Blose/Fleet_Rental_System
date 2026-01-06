@@ -27,28 +27,55 @@ async function main() {
       })
       console.log('Admin password updated')
     }
-    
-    return
+  } else {
+    // Create admin user
+    const hashedPassword = await bcrypt.hash(adminPassword, 10)
+
+    const admin = await prisma.user.create({
+      data: {
+        email: adminEmail,
+        name: adminName,
+        password: hashedPassword,
+        role: 'ADMIN',
+        isEmailVerified: true,
+        isActive: true,
+      },
+    })
+
+    console.log(`✅ Admin user created successfully!`)
+    console.log(`   Email: ${admin.email}`)
+    console.log(`   Password: ${adminPassword}`)
+    console.log(`   ⚠️  Please change the default password after first login!`)
   }
 
-  // Create admin user
-  const hashedPassword = await bcrypt.hash(adminPassword, 10)
+  // Seed default app settings
+  console.log('Seeding app settings...')
+  
+  const defaultSettings = [
+    { key: 'payments.mode', value: 'MANUAL' },
+    { key: 'payments.currency', value: 'ZAR' },
+    { key: 'payments.defaultRentCycle', value: 'WEEKLY' },
+    { key: 'payments.defaultDueDay', value: '25' },
+    { key: 'payments.gracePeriodDays', value: '3' },
+    { key: 'reminders.enabled', value: 'false' },
+    { key: 'reminders.fromEmail', value: '' },
+    { key: 'reminders.schedule.daysBefore', value: '3' },
+    { key: 'reminders.schedule.onDueDate', value: 'true' },
+    { key: 'reminders.schedule.daysOverdue', value: '3' },
+  ]
 
-  const admin = await prisma.user.create({
-    data: {
-      email: adminEmail,
-      name: adminName,
-      password: hashedPassword,
-      role: 'ADMIN',
-      isEmailVerified: true,
-      isActive: true,
-    },
-  })
+  for (const setting of defaultSettings) {
+    await prisma.appSetting.upsert({
+      where: { key: setting.key },
+      update: {}, // Don't update if exists
+      create: {
+        key: setting.key,
+        value: setting.value,
+      },
+    })
+  }
 
-  console.log(`✅ Admin user created successfully!`)
-  console.log(`   Email: ${admin.email}`)
-  console.log(`   Password: ${adminPassword}`)
-  console.log(`   ⚠️  Please change the default password after first login!`)
+  console.log('✅ Default app settings seeded successfully!')
 }
 
 main()
