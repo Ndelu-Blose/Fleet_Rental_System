@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -54,10 +55,12 @@ type Vehicle = {
 }
 
 export default function AdminContractsPage() {
+  const searchParams = useSearchParams()
   const [contracts, setContracts] = useState<Contract[]>([])
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
+  const showActiveOnly = searchParams.get("status") === "active"
   const [showDialog, setShowDialog] = useState(false)
   const [creating, setCreating] = useState(false)
   const [formData, setFormData] = useState({
@@ -201,7 +204,7 @@ export default function AdminContractsPage() {
       </div>
 
       <div className="grid gap-4">
-        {contracts.map((contract) => (
+        {(showActiveOnly ? contracts.filter((c) => c.status === "ACTIVE") : contracts).map((contract) => (
           <Card key={contract.id}>
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">

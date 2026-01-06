@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Loader2, Calendar } from "lucide-react"
@@ -27,13 +28,30 @@ type Payment = {
 }
 
 export default function AdminPaymentsPage() {
+  const searchParams = useSearchParams()
   const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
-  const [filter, setFilter] = useState<string>("all")
+  
+  // Read status from URL query param, default to "all"
+  const statusParam = searchParams.get("status")?.toLowerCase()
+  const initialFilter = statusParam === "paid" || statusParam === "pending" || statusParam === "overdue" 
+    ? statusParam 
+    : "all"
+  const [filter, setFilter] = useState<string>(initialFilter)
 
   useEffect(() => {
     fetchPayments()
   }, [])
+
+  // Update filter when URL param changes
+  useEffect(() => {
+    const status = searchParams.get("status")?.toLowerCase()
+    if (status && (status === "paid" || status === "pending" || status === "overdue")) {
+      setFilter(status)
+    } else if (!status) {
+      setFilter("all")
+    }
+  }, [searchParams])
 
   const fetchPayments = async () => {
     try {

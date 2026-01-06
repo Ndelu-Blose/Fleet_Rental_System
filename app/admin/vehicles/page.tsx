@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -37,9 +37,11 @@ type Vehicle = {
 
 export default function AdminVehiclesPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
   const [showDialog, setShowDialog] = useState(false)
+  const showExpiringOnly = searchParams.get("filter") === "expiring"
   const [creating, setCreating] = useState(false)
   const [formData, setFormData] = useState({
     type: "CAR",
@@ -149,7 +151,7 @@ export default function AdminVehiclesPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {vehicles.map((vehicle) => (
+        {(showExpiringOnly ? vehicles.filter(hasExpiringCompliance) : vehicles).map((vehicle) => (
           <Card
             key={vehicle.id}
             className="cursor-pointer hover:border-primary transition-colors"
