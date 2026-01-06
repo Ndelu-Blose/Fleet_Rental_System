@@ -113,10 +113,13 @@ export async function GET() {
       },
       timestamp: new Date().toISOString(),
     });
-  } catch (error) {
-    console.error("Stats error:", error);
+  } catch (error: any) {
+    console.error("[Stats] Error fetching statistics:", error);
     return NextResponse.json(
-      { error: "Failed to fetch statistics" },
+      { 
+        error: "Failed to fetch statistics",
+        details: process.env.NODE_ENV === "development" ? error.message : undefined
+      },
       { status: 500 }
     );
   }

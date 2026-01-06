@@ -51,7 +51,7 @@ export function SystemReadiness() {
     { key: "payments", label: "Payment Rules", configured: readiness.payments },
     { key: "onboarding", label: "Driver Requirements", configured: readiness.onboarding },
     { key: "notifications", label: "Notifications", configured: readiness.notifications },
-    { key: "system", label: "System Controls", configured: readiness.system },
+    { key: "system", label: "Operations", configured: readiness.system },
   ];
 
   const configuredCount = statuses.filter((s) => s.configured).length;

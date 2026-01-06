@@ -330,6 +330,31 @@ NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_live_...`}
           <CardDescription>Configure payment reminder notifications</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Status indicator - only show warning when reminders are enabled but not fully configured */}
+          {!edit && settings.remindersEnabled && (!envStatus.resend || !settings.reminderFromEmail) && (
+            <Alert variant="destructive" className="mb-4">
+              <AlertCircle className="h-4 w-4" />
+              <AlertTitle>Reminders Not Fully Configured</AlertTitle>
+              <AlertDescription className="mt-2">
+                <p className="text-sm">
+                  {!envStatus.resend
+                    ? "Resend API is not configured. Reminders cannot be sent until Resend is set up."
+                    : !settings.reminderFromEmail
+                      ? "From email address is not set. Please configure a sender email address."
+                      : "Reminders are enabled but missing required configuration."}
+                </p>
+              </AlertDescription>
+            </Alert>
+          )}
+
+          {/* Success indicator when reminders are fully configured */}
+          {!edit && settings.remindersEnabled && envStatus.resend && settings.reminderFromEmail && (
+            <div className="flex items-center gap-2 mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <span className="text-sm font-medium text-green-800">Reminders are enabled and configured</span>
+            </div>
+          )}
+
           {!edit ? (
             <div className="p-4 bg-muted/50 rounded-lg">
               <ViewModeDisplay

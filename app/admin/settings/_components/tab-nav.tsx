@@ -55,9 +55,9 @@ const configTabs: TabConfig[] = [
 const adminTabs: TabConfig[] = [
   {
     href: "/admin/settings/system",
-    label: "System Controls",
+    label: "Operations Overview",
     icon: SettingsIcon,
-    description: "Manage maintenance mode and system-wide settings",
+    description: "Monitor business status and control platform access",
   },
   {
     href: "/admin/settings/admin-accounts",
