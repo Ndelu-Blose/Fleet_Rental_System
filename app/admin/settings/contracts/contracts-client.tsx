@@ -126,34 +126,70 @@ export default function ContractsClient() {
               <Label htmlFor="contracts.default.carAmount">Default Car Rental Amount (cents)</Label>
               <Input
                 id="contracts.default.carAmount"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={s.form["contracts.default.carAmount"] ?? "0"}
                 onChange={(e) => {
                   const newForm = { ...s.form };
-                  newForm["contracts.default.carAmount"] = e.target.value;
+                  // Only allow integers (no decimals, no negative)
+                  const value = e.target.value.replace(/[^\d]/g, "");
+                  newForm["contracts.default.carAmount"] = value || "0";
+                  s.setForm(newForm);
+                }}
+                onBlur={(e) => {
+                  // Ensure it's a valid integer on blur
+                  const value = e.target.value.replace(/[^\d]/g, "") || "0";
+                  const newForm = { ...s.form };
+                  newForm["contracts.default.carAmount"] = value;
                   s.setForm(newForm);
                 }}
               />
-              <p className="text-xs text-muted-foreground">
-                Default amount in cents (e.g., 50000 = R500.00)
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Enter amount in cents (e.g., 50000 = R500.00)
+                </p>
+                {s.form["contracts.default.carAmount"] && (
+                  <p className="text-xs font-medium text-primary">
+                    = R {((Number(s.form["contracts.default.carAmount"]) || 0) / 100).toFixed(2)}
+                  </p>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="contracts.default.bikeAmount">Default Bike Rental Amount (cents)</Label>
               <Input
                 id="contracts.default.bikeAmount"
-                type="number"
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={s.form["contracts.default.bikeAmount"] ?? "0"}
                 onChange={(e) => {
                   const newForm = { ...s.form };
-                  newForm["contracts.default.bikeAmount"] = e.target.value;
+                  // Only allow integers (no decimals, no negative)
+                  const value = e.target.value.replace(/[^\d]/g, "");
+                  newForm["contracts.default.bikeAmount"] = value || "0";
+                  s.setForm(newForm);
+                }}
+                onBlur={(e) => {
+                  // Ensure it's a valid integer on blur
+                  const value = e.target.value.replace(/[^\d]/g, "") || "0";
+                  const newForm = { ...s.form };
+                  newForm["contracts.default.bikeAmount"] = value;
                   s.setForm(newForm);
                 }}
               />
-              <p className="text-xs text-muted-foreground">
-                Default amount in cents (e.g., 30000 = R300.00)
-              </p>
+              <div className="flex items-center justify-between">
+                <p className="text-xs text-muted-foreground">
+                  Enter amount in cents (e.g., 75000 = R750.00)
+                </p>
+                {s.form["contracts.default.bikeAmount"] && (
+                  <p className="text-xs font-medium text-primary">
+                    = R {((Number(s.form["contracts.default.bikeAmount"]) || 0) / 100).toFixed(2)}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -192,14 +228,35 @@ export default function ContractsClient() {
                 <Label htmlFor="contracts.depositAmount">Deposit Amount (cents)</Label>
                 <Input
                   id="contracts.depositAmount"
-                  type="number"
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
                   value={s.form["contracts.depositAmount"] ?? "0"}
                   onChange={(e) => {
                     const newForm = { ...s.form };
-                    newForm["contracts.depositAmount"] = e.target.value;
+                    // Only allow integers (no decimals, no negative)
+                    const value = e.target.value.replace(/[^\d]/g, "");
+                    newForm["contracts.depositAmount"] = value || "0";
+                    s.setForm(newForm);
+                  }}
+                  onBlur={(e) => {
+                    // Ensure it's a valid integer on blur
+                    const value = e.target.value.replace(/[^\d]/g, "") || "0";
+                    const newForm = { ...s.form };
+                    newForm["contracts.depositAmount"] = value;
                     s.setForm(newForm);
                   }}
                 />
+                <div className="flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    Enter amount in cents (e.g., 10000 = R100.00)
+                  </p>
+                  {s.form["contracts.depositAmount"] && (
+                    <p className="text-xs font-medium text-primary">
+                      = R {((Number(s.form["contracts.depositAmount"]) || 0) / 100).toFixed(2)}
+                    </p>
+                  )}
+                </div>
               </div>
             )}
           </div>

@@ -97,7 +97,8 @@ export async function GET(
       // Continue even if notification fails
     }
 
-    return redirect("/admin/profile?success=email_verified")
+    // Redirect with a flag to trigger session refresh
+    return redirect("/admin/profile?success=email_verified&refresh_session=true")
   } catch (error) {
     console.error("[Admin] Verify email error:", error)
     return redirect("/admin/profile?error=verification_failed")

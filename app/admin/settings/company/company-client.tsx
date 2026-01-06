@@ -11,8 +11,12 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Eye, EyeOff } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Copy, Eye, EyeOff, Check, ChevronsUpDown } from "lucide-react";
 import { toast } from "sonner";
+import { SA_BANKS, getBankCode } from "@/lib/sa-banks";
+import { cn } from "@/lib/utils";
 
 const KEYS = [
   "company.name",
@@ -34,6 +38,7 @@ export default function CompanyClient() {
   const s = useSettingsForm(KEYS);
   const [saving, setSaving] = useState(false);
   const [showAccountNumber, setShowAccountNumber] = useState(false);
+  const [bankOpen, setBankOpen] = useState(false);
 
   const configured = getCompanyStatus(s.form);
   const bankConfigured = getBankingStatus(s.form);
@@ -244,18 +249,59 @@ export default function CompanyClient() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="company.bank.name">Bank Name *</Label>
-                <Input
-                  id="company.bank.name"
-                  disabled={!s.edit}
-                  className="disabled:bg-muted"
-                  value={s.form["company.bank.name"] ?? ""}
-                  onChange={(e) => {
-                    const newForm = { ...s.form };
-                    newForm["company.bank.name"] = e.target.value;
-                    s.setForm(newForm);
-                  }}
-                  placeholder="e.g., FNB, Standard Bank"
-                />
+                <Popover open={bankOpen} onOpenChange={setBankOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={bankOpen}
+                      className="w-full justify-between disabled:bg-muted"
+                      disabled={!s.edit}
+                    >
+                      {s.form["company.bank.name"] || "Select bank..."}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                    <Command>
+                      <CommandInput placeholder="Search bank..." />
+                      <CommandList>
+                        <CommandEmpty>No bank found.</CommandEmpty>
+                        <CommandGroup>
+                          {SA_BANKS.map((bank) => (
+                            <CommandItem
+                              key={bank.name}
+                              value={bank.name}
+                              onSelect={() => {
+                                const newForm = { ...s.form };
+                                newForm["company.bank.name"] = bank.name;
+                                // Auto-fill branch code
+                                const branchCode = getBankCode(bank.name);
+                                if (branchCode) {
+                                  newForm["company.bank.branchCode"] = branchCode;
+                                }
+                                s.setForm(newForm);
+                                setBankOpen(false);
+                              }}
+                            >
+                              <Check
+                                className={cn(
+                                  "mr-2 h-4 w-4",
+                                  s.form["company.bank.name"] === bank.name ? "opacity-100" : "opacity-0"
+                                )}
+                              />
+                              {bank.name}
+                              <span className="ml-auto text-xs text-muted-foreground">{bank.code}</span>
+                            </CommandItem>
+                          ))}
+                        </CommandGroup>
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
+                <p className="text-xs text-muted-foreground">
+                  Select your bank to auto-fill the universal branch code
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -284,12 +330,25 @@ export default function CompanyClient() {
                   value={s.form["company.bank.accountNumber"] ?? ""}
                   onChange={(e) => {
                     const newForm = { ...s.form };
-                    newForm["company.bank.accountNumber"] = e.target.value.replace(/\D/g, "");
-                    s.setForm(newForm);
+                    const value = e.target.value.replace(/\D/g, "");
+                    // Enforce 6-13 digits
+                    if (value.length <= 13) {
+                      newForm["company.bank.accountNumber"] = value;
+                      s.setForm(newForm);
+                    }
                   }}
-                  placeholder="Account number (numbers only)"
-                  maxLength={20}
+                  placeholder="Account number (6-13 digits)"
+                  minLength={6}
+                  maxLength={13}
+                  pattern="[0-9]{6,13}"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {s.form["company.bank.accountNumber"] &&
+                  (s.form["company.bank.accountNumber"].length < 6 ||
+                    s.form["company.bank.accountNumber"].length > 13)
+                    ? "Account number must be between 6 and 13 digits"
+                    : "6-13 digits"}
+                </p>
               </div>
 
               <div className="space-y-2">
@@ -301,12 +360,22 @@ export default function CompanyClient() {
                   value={s.form["company.bank.branchCode"] ?? ""}
                   onChange={(e) => {
                     const newForm = { ...s.form };
-                    newForm["company.bank.branchCode"] = e.target.value.replace(/\D/g, "");
-                    s.setForm(newForm);
+                    const value = e.target.value.replace(/\D/g, "");
+                    // Enforce exactly 6 digits
+                    if (value.length <= 6) {
+                      newForm["company.bank.branchCode"] = value;
+                      s.setForm(newForm);
+                    }
                   }}
                   placeholder="e.g., 250655"
-                  maxLength={10}
+                  maxLength={6}
+                  pattern="[0-9]{6}"
                 />
+                <p className="text-xs text-muted-foreground">
+                  {s.form["company.bank.name"] && getBankCode(s.form["company.bank.name"])
+                    ? "Auto-filled using universal branch code; edit if your bank requires a specific branch."
+                    : "6-digit branch code (auto-filled when you select a bank)"}
+                </p>
               </div>
 
               <div className="space-y-2">

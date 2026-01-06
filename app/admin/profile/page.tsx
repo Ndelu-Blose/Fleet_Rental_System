@@ -22,6 +22,7 @@ type Profile = {
 
 export default function AdminProfilePage() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [profile, setProfile] = useState<Profile | null>(null)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -53,6 +54,7 @@ export default function AdminProfilePage() {
     // Check for success/error messages from URL params
     const success = searchParams.get("success")
     const error = searchParams.get("error")
+    const refreshSession = searchParams.get("refresh_session")
 
     if (success === "email_verified") {
       // Show prominent success toast
@@ -60,9 +62,12 @@ export default function AdminProfilePage() {
         description: "Your email address has been successfully updated. A confirmation email has been sent to your previous address.",
         duration: 5000,
       })
-      // Refresh profile to show new email
+      
+      // Refresh profile to show new email immediately
       setTimeout(() => {
         fetchProfile()
+        // Force a router refresh to update the header email (which fetches from DB)
+        router.refresh()
       }, 500)
     } else if (error) {
       if (error === "invalid_token") {

@@ -22,7 +22,10 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     role: "ADMIN" | "DRIVER"
+    email?: string
+    name?: string | null
     isEmailVerified: boolean
     driverProfileId?: string
+    lastRefreshed?: number
   }
 }
