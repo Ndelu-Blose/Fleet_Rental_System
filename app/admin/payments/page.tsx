@@ -4,7 +4,10 @@ import { useEffect, useState } from "react"
 import { useSearchParams } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Loader2, Calendar } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Loader2, Calendar, CheckCircle2, ExternalLink } from "lucide-react"
+import { toast } from "sonner"
+import Link from "next/link"
 
 type Payment = {
   id: string
@@ -12,7 +15,9 @@ type Payment = {
   dueDate: string
   status: string
   paidAt: string | null
+  isOverdue?: boolean
   contract: {
+    id: string
     driver: {
       user: {
         name: string | null
@@ -81,13 +86,31 @@ export default function AdminPaymentsPage() {
   }
 
   const isOverdue = (payment: Payment) => {
-    return payment.status === "PENDING" && new Date(payment.dueDate) < new Date()
+    return payment.isOverdue === true || (payment.status === "PENDING" && new Date(payment.dueDate) < new Date())
   }
 
   const filterPayments = (status: string) => {
     if (status === "all") return payments
     if (status === "overdue") return payments.filter((p) => isOverdue(p))
     return payments.filter((p) => p.status === status.toUpperCase())
+  }
+
+  const handleMarkPaid = async (paymentId: string) => {
+    try {
+      const res = await fetch(`/api/admin/payments/${paymentId}/mark-paid`, {
+        method: "POST",
+      })
+
+      if (!res.ok) {
+        const error = await res.json()
+        throw new Error(error.error || "Failed to mark payment as paid")
+      }
+
+      toast.success("Payment marked as paid ✅")
+      await fetchPayments() // Refresh the list
+    } catch (error: any) {
+      toast.error(error.message || "Failed to mark payment as paid")
+    }
   }
 
   const filteredPayments = filterPayments(filter)
@@ -186,8 +209,42 @@ export default function AdminPaymentsPage() {
                     </p>
                   </div>
 
-                  <div className="text-right">
+                  <div className="text-right space-y-2">
                     <p className="text-2xl font-bold">{formatCurrency(payment.amountCents)}</p>
+                    {payment.status === "PENDING" && (
+                      <div className="flex gap-2 justify-end">
+                        <Button
+                          size="sm"
+                          onClick={() => handleMarkPaid(payment.id)}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-1" />
+                          Mark Paid
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          asChild
+                        >
+                          <Link href={`/admin/contracts?contract=${payment.contract.id}`}>
+                            <ExternalLink className="h-4 w-4 mr-1" />
+                            View Contract
+                          </Link>
+                        </Button>
+                      </div>
+                    )}
+                    {payment.status === "PAID" && (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        asChild
+                      >
+                        <Link href={`/admin/contracts?contract=${payment.contract.id}`}>
+                          <ExternalLink className="h-4 w-4 mr-1" />
+                          View Contract
+                        </Link>
+                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 
 export default function SettingsPage() {
-  redirect("/admin/settings/payments")
+  redirect("/admin/settings/company")
 }
 

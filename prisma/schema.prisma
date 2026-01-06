@@ -33,6 +33,7 @@ enum ContractStatus {
 enum FeeFrequency {
   DAILY
   WEEKLY
+  MONTHLY
 }
 
 enum PaymentStatus {
@@ -273,7 +274,8 @@ model RentalContract {
 
   feeAmountCents Int
   frequency      FeeFrequency
-  dueWeekday     Int?
+  dueWeekday     Int? // 0-6 for weekly (0=Sunday, 6=Saturday)
+  dueDayOfMonth  Int? // 1-28 for monthly contracts
   startDate      DateTime
   endDate        DateTime?
   status         ContractStatus @default(ACTIVE)

@@ -5,6 +5,7 @@ import { signOut } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus, UserCircle, Settings } from "lucide-react"
+import { NotificationsDropdown } from "./_components/notifications-dropdown"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin()
@@ -32,6 +33,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <h1 className="text-xl font-bold">FleetHub Admin</h1>
             </div>
             <div className="flex items-center gap-4">
+              <NotificationsDropdown />
               <span className="text-sm text-muted-foreground">{displayEmail}</span>
               <form action={handleSignOut}>
                 <Button variant="outline" size="sm" type="submit">

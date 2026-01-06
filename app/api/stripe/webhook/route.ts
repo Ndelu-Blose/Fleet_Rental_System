@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { stripe } from "@/lib/stripe"
 import { env } from "@/lib/env"
+import { markPaymentPaid } from "@/lib/payments/markPaid"
 import type Stripe from "stripe"
 
 export async function POST(req: NextRequest) {
@@ -39,44 +40,8 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: "Payment not found" }, { status: 404 })
       }
 
-      // Update payment status
-      await prisma.payment.update({
-        where: { id: payment.id },
-        data: {
-          status: "PAID",
-          paidAt: new Date(),
-        },
-      })
-
-      // Generate next payment if contract is still active
-      if (payment.contract.status === "ACTIVE") {
-        const nextDueDate = new Date(payment.dueDate)
-
-        if (payment.contract.frequency === "DAILY") {
-          nextDueDate.setDate(nextDueDate.getDate() + 1)
-        } else if (payment.contract.frequency === "WEEKLY") {
-          nextDueDate.setDate(nextDueDate.getDate() + 7)
-        }
-
-        // Only create if next payment doesn't already exist
-        const existingNext = await prisma.payment.findFirst({
-          where: {
-            contractId: payment.contractId,
-            dueDate: nextDueDate,
-          },
-        })
-
-        if (!existingNext) {
-          await prisma.payment.create({
-            data: {
-              contractId: payment.contractId,
-              amountCents: payment.amountCents,
-              dueDate: nextDueDate,
-              status: "PENDING",
-            },
-          })
-        }
-      }
+      // Use the markPaymentPaid helper which handles next payment generation
+      await markPaymentPaid(payment.id)
 
       console.log("[v0] Payment completed:", payment.id)
     }

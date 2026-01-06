@@ -51,28 +51,80 @@ async function main() {
   // Seed default app settings
   console.log('Seeding app settings...')
   
-  const defaultSettings = [
-    { key: 'payments.mode', value: 'MANUAL' },
-    { key: 'payments.currency', value: 'ZAR' },
-    { key: 'payments.defaultRentCycle', value: 'WEEKLY' },
-    { key: 'payments.defaultDueDay', value: '25' },
-    { key: 'payments.gracePeriodDays', value: '3' },
-    { key: 'reminders.enabled', value: 'false' },
-    { key: 'reminders.fromEmail', value: '' },
-    { key: 'reminders.schedule.daysBefore', value: '3' },
-    { key: 'reminders.schedule.onDueDate', value: 'true' },
-    { key: 'reminders.schedule.daysOverdue', value: '3' },
-  ]
+  const defaults: Record<string, any> = {
+    // Company
+    "company.name": "FleetHub",
+    "company.email": "",
+    "company.phone": "",
+    "company.whatsapp": "",
+            "company.address": "",
+            "company.currency": "ZAR",
 
-  for (const setting of defaultSettings) {
+            // Banking Details (structured)
+            "company.bank.name": "",
+            "company.bank.accountHolder": "",
+            "company.bank.accountNumber": "",
+            "company.bank.branchCode": "",
+            "company.bank.accountType": "",
+            "company.bank.referencePrefix": "",
+
+    // Payments
+    "payments.mode": "MANUAL", // MANUAL | STRIPE
+    "payments.rentCycleDefault": "MONTHLY", // WEEKLY | MONTHLY
+    "payments.graceDays": "3",
+    "payments.lateFeeEnabled": "false",
+    "payments.lateFeeType": "FLAT", // FLAT | PERCENT
+    "payments.lateFeeValue": "0",
+    "payments.autoGenerateNext": "true",
+
+    // Notifications
+    "notifications.enabled": "true",
+    "notifications.reminderBeforeDays": "3",
+    "notifications.reminderOnDueDate": "true",
+    "notifications.reminderOverdueAfterDays": "3",
+    "notifications.fromEmail": "",
+    "notifications.template.paymentReminder": "Hi {{driverName}}, your rental payment of {{amount}} is due on {{dueDate}}.",
+    "notifications.template.overdueNotice": "Hi {{driverName}}, your payment of {{amount}} is overdue since {{dueDate}}.",
+    "notifications.template.docApproved": "Hi {{driverName}}, your document was approved.",
+    "notifications.template.docRejected": "Hi {{driverName}}, your document was rejected: {{reason}}.",
+
+    // Contracts & pricing
+    "contracts.default.carAmount": "0",
+    "contracts.default.bikeAmount": "0",
+    "contracts.depositEnabled": "false",
+    "contracts.depositAmount": "0",
+    "contracts.allowedFrequencies": JSON.stringify(["WEEKLY", "MONTHLY"]),
+    "contracts.termsText": "Rental terms go here...",
+
+    // Onboarding
+    "onboarding.locationRequired": "true",
+    "onboarding.requiredFields": JSON.stringify([
+      "fullName",
+      "idNumber",
+      "address",
+      "driverPhoto"
+    ]),
+    "onboarding.requiredDocuments": JSON.stringify([
+      "CERTIFIED_ID",
+      "PROOF_OF_RESIDENCE",
+      "DRIVERS_LICENSE"
+    ]),
+    "onboarding.progressWeights": JSON.stringify({
+      profile: 40,
+      documents: 40,
+      location: 20
+    }),
+
+    // System
+    "system.maintenanceMode": "false"
+  };
+
+  for (const [key, value] of Object.entries(defaults)) {
     await prisma.appSetting.upsert({
-      where: { key: setting.key },
-      update: {}, // Don't update if exists
-      create: {
-        key: setting.key,
-        value: setting.value,
-      },
-    })
+      where: { key },
+      create: { key, value: String(value) },
+      update: { value: String(value) }
+    });
   }
 
   console.log('✅ Default app settings seeded successfully!')

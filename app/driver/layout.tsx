@@ -2,10 +2,18 @@ import type React from "react"
 import { requireDriver } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
 import { signOut } from "@/lib/auth"
+import { getSettingBool } from "@/lib/settings"
+import { redirect } from "next/navigation"
 import Link from "next/link"
 import { Car, User, CreditCard, MapPin } from "lucide-react"
 
 export default async function DriverLayout({ children }: { children: React.ReactNode }) {
+  // Check maintenance mode
+  const maintenanceMode = await getSettingBool("system.maintenanceMode", false)
+  if (maintenanceMode) {
+    redirect("/maintenance")
+  }
+
   const session = await requireDriver()
 
   async function handleSignOut() {
