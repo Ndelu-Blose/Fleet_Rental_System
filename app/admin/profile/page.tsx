@@ -55,16 +55,36 @@ export default function AdminProfilePage() {
     const error = searchParams.get("error")
 
     if (success === "email_verified") {
-      toast.success("Email address verified successfully!")
+      // Show prominent success toast
+      toast.success("Email Address Changed!", {
+        description: "Your email address has been successfully updated. A confirmation email has been sent to your previous address.",
+        duration: 5000,
+      })
+      // Refresh profile to show new email
+      setTimeout(() => {
+        fetchProfile()
+      }, 500)
     } else if (error) {
       if (error === "invalid_token") {
-        toast.error("Invalid verification token")
+        toast.error("Invalid Verification Token", {
+          description: "The verification link is invalid. Please request a new email change.",
+        })
       } else if (error === "expired_token") {
-        toast.error("Verification token expired. Please request a new email change.")
+        toast.error("Verification Link Expired", {
+          description: "Your verification link has expired. Please request a new email change.",
+        })
       } else if (error === "no_pending_email") {
-        toast.error("No pending email change found")
+        toast.error("No Pending Email Change", {
+          description: "No pending email change was found. Please initiate a new email change request.",
+        })
       } else if (error === "verification_failed") {
-        toast.error("Email verification failed. Please try again.")
+        toast.error("Verification Failed", {
+          description: "Email verification failed. Please try again or contact support.",
+        })
+      } else if (error === "email_already_taken") {
+        toast.error("Email Already in Use", {
+          description: "This email address is already associated with another account.",
+        })
       }
     }
   }, [searchParams])
@@ -98,10 +118,15 @@ export default function AdminProfilePage() {
       const data = await res.json()
 
       if (res.ok) {
-        toast.success("Profile updated successfully")
+        toast.success("Profile Updated!", {
+          description: "Your profile information has been saved successfully.",
+          duration: 3000,
+        })
         await fetchProfile()
       } else {
-        toast.error(data.error || "Failed to update profile")
+        toast.error("Failed to Update Profile", {
+          description: data.error || "Please check your information and try again.",
+        })
       }
     } catch (error) {
       console.error("Failed to update profile:", error)
@@ -113,7 +138,16 @@ export default function AdminProfilePage() {
 
   const handleChangePassword = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      toast.error("Passwords do not match")
+      toast.error("Passwords Do Not Match", {
+        description: "Please make sure both password fields match.",
+      })
+      return
+    }
+
+    if (passwordData.newPassword.length < 8) {
+      toast.error("Password Too Short", {
+        description: "Password must be at least 8 characters long.",
+      })
       return
     }
 
@@ -132,18 +166,25 @@ export default function AdminProfilePage() {
       const data = await res.json()
 
       if (res.ok) {
-        toast.success("Password changed successfully")
+        toast.success("Password Changed Successfully!", {
+          description: "Your password has been updated. Please use your new password for future logins.",
+          duration: 5000,
+        })
         setPasswordData({
           currentPassword: "",
           newPassword: "",
           confirmPassword: "",
         })
       } else {
-        toast.error(data.error || "Failed to change password")
+        toast.error("Failed to Change Password", {
+          description: data.error || "Please check your current password and try again.",
+        })
       }
     } catch (error) {
       console.error("Failed to change password:", error)
-      toast.error("Failed to change password")
+      toast.error("Password Change Failed", {
+        description: "An error occurred while changing your password. Please try again.",
+      })
     } finally {
       setChangingPassword(false)
     }
@@ -161,17 +202,24 @@ export default function AdminProfilePage() {
       const data = await res.json()
 
       if (res.ok) {
-        toast.success("Verification email sent to your new address. Please check your email.")
+        toast.success("Verification Email Sent!", {
+          description: "Please check your new email address and click the verification link to complete the change.",
+          duration: 5000,
+        })
         setEmailData({
           currentPassword: "",
           newEmail: "",
         })
       } else {
-        toast.error(data.error || "Failed to initiate email change")
+        toast.error("Failed to Send Verification Email", {
+          description: data.error || "Please check your password and email address, then try again.",
+        })
       }
     } catch (error) {
       console.error("Failed to change email:", error)
-      toast.error("Failed to change email")
+      toast.error("Email Change Failed", {
+        description: "An error occurred while sending the verification email. Please try again.",
+      })
     } finally {
       setChangingEmail(false)
     }

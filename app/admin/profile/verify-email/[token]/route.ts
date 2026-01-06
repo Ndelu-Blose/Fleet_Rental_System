@@ -5,10 +5,12 @@ import { redirect } from "next/navigation"
 
 export async function GET(
   req: NextRequest,
-  { params }: { params: { token: string } }
+  { params }: { params: Promise<{ token: string }> | { token: string } }
 ) {
   try {
-    const { token } = params
+    // Handle both sync and async params (Next.js 15+ compatibility)
+    const resolvedParams = params instanceof Promise ? await params : params
+    const { token } = resolvedParams
 
     // Find user by verification token
     const user = await prisma.user.findUnique({
@@ -38,17 +40,37 @@ export async function GET(
     const oldEmail = user.email
     const newEmail = user.emailChangePending
 
-    // Update email
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        email: newEmail,
-        isEmailVerified: true,
-        activationToken: null,
-        activationExpires: null,
-        emailChangePending: null,
-      },
+    // Check if new email is already taken by another user
+    const emailExists = await prisma.user.findUnique({
+      where: { email: newEmail },
     })
+
+    if (emailExists && emailExists.id !== user.id) {
+      return redirect("/admin/profile?error=email_already_taken")
+    }
+
+    // Update email
+    try {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: {
+          email: newEmail,
+          isEmailVerified: true,
+          activationToken: null,
+          activationExpires: null,
+          emailChangePending: null,
+        },
+      })
+    } catch (updateError: any) {
+      console.error("[Admin] Failed to update email:", updateError)
+      
+      // Handle unique constraint violation
+      if (updateError?.code === "P2002") {
+        return redirect("/admin/profile?error=email_already_taken")
+      }
+      
+      throw updateError // Re-throw to be caught by outer catch
+    }
 
     // Send confirmation to old email
     try {
