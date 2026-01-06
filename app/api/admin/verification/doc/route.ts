@@ -6,6 +6,8 @@ import {
   sendDocumentApprovalEmail,
   sendDocumentRejectionEmail,
 } from "@/lib/mail"
+import { createNotification } from "@/lib/notifications"
+import { NotificationType, NotificationPriority } from "@prisma/client"
 
 export async function POST(req: NextRequest) {
   try {
@@ -71,6 +73,29 @@ export async function POST(req: NextRequest) {
     } catch (emailError) {
       console.error("[v0] Failed to send document review email:", emailError)
       // Continue even if email fails
+    }
+
+    // Create notification
+    try {
+      const driverName = document.driver.user.name || "Driver"
+      const docType = document.type.replace(/_/g, " ").toLowerCase()
+      
+      await createNotification({
+        userId: session.user.id,
+        type: status === "APPROVED" ? NotificationType.DOCUMENT_APPROVED : NotificationType.DOCUMENT_REJECTED,
+        priority: NotificationPriority.MEDIUM,
+        title: status === "APPROVED" ? "Document approved" : "Document rejected",
+        message: `${driverName}'s ${docType} was ${status === "APPROVED" ? "approved" : "rejected"}.`,
+        link: "/admin/verification",
+        metadata: {
+          driverId: document.driverId,
+          documentId: document.id,
+          docType: document.type,
+        },
+      })
+    } catch (notificationError) {
+      console.error("[v0] Failed to create document review notification:", notificationError)
+      // Continue even if notification fails
     }
 
     return NextResponse.json({ success: true })

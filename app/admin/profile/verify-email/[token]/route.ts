@@ -1,6 +1,8 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { sendEmailChangeConfirmationEmail } from "@/lib/mail"
+import { createNotification } from "@/lib/notifications"
+import { NotificationType, NotificationPriority } from "@prisma/client"
 import { redirect } from "next/navigation"
 
 export async function GET(
@@ -78,6 +80,21 @@ export async function GET(
     } catch (emailError) {
       console.error("[Admin] Failed to send confirmation email:", emailError)
       // Continue even if confirmation email fails
+    }
+
+    // Create notification
+    try {
+      await createNotification({
+        userId: user.id,
+        type: NotificationType.EMAIL_CHANGED,
+        priority: NotificationPriority.HIGH,
+        title: "Email updated",
+        message: `Your email address was changed from ${oldEmail} to ${newEmail}.`,
+        link: "/admin/profile",
+      })
+    } catch (notificationError) {
+      console.error("[Admin] Failed to create email change notification:", notificationError)
+      // Continue even if notification fails
     }
 
     return redirect("/admin/profile?success=email_verified")

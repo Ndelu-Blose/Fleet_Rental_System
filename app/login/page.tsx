@@ -5,9 +5,15 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
+import { AuthError } from "next-auth"
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ error?: string; message?: string }>
+}) {
   const session = await auth()
+  const params = await searchParams
 
   if (session?.user) {
     redirect(session.user.role === "ADMIN" ? "/admin" : "/driver")
@@ -15,11 +21,47 @@ export default async function LoginPage() {
 
   async function handleLogin(formData: FormData) {
     "use server"
-    await signIn("credentials", {
-      email: formData.get("email") as string,
-      password: formData.get("password") as string,
-      redirectTo: "/driver",
-    })
+    try {
+      const email = formData.get("email") as string
+      const password = formData.get("password") as string
+      
+      // Verify credentials first to determine redirect path
+      const verifyResponse = await fetch(
+        `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-credentials`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, password }),
+        }
+      )
+      
+      if (!verifyResponse.ok) {
+        redirect("/login?error=Invalid email or password")
+        return
+      }
+      
+      const user = await verifyResponse.json()
+      const redirectPath = user.role === "ADMIN" ? "/admin" : "/driver"
+      
+      await signIn("credentials", {
+        email,
+        password,
+        redirectTo: redirectPath,
+      })
+    } catch (error) {
+      if (error instanceof AuthError) {
+        switch (error.type) {
+          case "CredentialsSignin":
+            redirect("/login?error=Invalid email or password")
+            break
+          default:
+            redirect("/login?error=An error occurred. Please try again.")
+        }
+      } else {
+        console.error("[Login] Unexpected error:", error)
+        redirect("/login?error=An error occurred. Please try again.")
+      }
+    }
   }
 
   return (
@@ -31,6 +73,16 @@ export default async function LoginPage() {
         </CardHeader>
         <CardContent>
           <form action={handleLogin} className="space-y-4">
+            {params?.error && (
+              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
+                {params.error}
+              </div>
+            )}
+            {params?.message && (
+              <div className="rounded-md bg-green-500/15 p-3 text-sm text-green-600">
+                {params.message}
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input id="email" name="email" type="email" placeholder="you@example.com" required />

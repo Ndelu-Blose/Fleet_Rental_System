@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/permissions"
 import { changePasswordSchema } from "@/lib/validations/admin"
+import { createNotification } from "@/lib/notifications"
+import { NotificationType, NotificationPriority } from "@prisma/client"
 import bcrypt from "bcryptjs"
 
 export async function POST(req: NextRequest) {
@@ -53,6 +55,21 @@ export async function POST(req: NextRequest) {
       where: { id: user.id },
       data: { password: hashedPassword },
     })
+
+    // Create notification
+    try {
+      await createNotification({
+        userId: session.user.id,
+        type: NotificationType.PASSWORD_CHANGED,
+        priority: NotificationPriority.HIGH,
+        title: "Password updated",
+        message: "Your admin password was changed successfully.",
+        link: "/admin/profile",
+      })
+    } catch (notificationError) {
+      console.error("[Admin] Failed to create password change notification:", notificationError)
+      // Continue even if notification fails
+    }
 
     return NextResponse.json({ success: true, message: "Password changed successfully" })
   } catch (error) {

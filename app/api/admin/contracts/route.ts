@@ -5,7 +5,8 @@ import { createContractSchema } from "@/lib/validations/contract"
 import { sendContractCreatedEmail } from "@/lib/mail"
 import { getSettingInt, getSetting } from "@/lib/settings"
 import { createFirstPayment } from "@/lib/payments/generator"
-import { FeeFrequency, VehicleType } from "@prisma/client"
+import { createNotification } from "@/lib/notifications"
+import { FeeFrequency, VehicleType, NotificationType, NotificationPriority } from "@prisma/client"
 
 export async function GET(req: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin()
+    const session = await requireAdmin()
 
     const body = await req.json()
     
@@ -190,6 +191,29 @@ export async function POST(req: NextRequest) {
     } catch (emailError) {
       console.error("[v0] Failed to send contract creation email:", emailError)
       // Continue even if email fails
+    }
+
+    // Create notification
+    try {
+      const driverName = contract.driver.user.name || "Driver"
+      const vehicleReg = contract.vehicle.reg
+      
+      await createNotification({
+        userId: session.user.id,
+        type: NotificationType.CONTRACT_CREATED,
+        priority: NotificationPriority.MEDIUM,
+        title: "Contract created",
+        message: `A new contract was created for ${driverName} with vehicle ${vehicleReg}.`,
+        link: "/admin/contracts",
+        metadata: {
+          contractId: contract.id,
+          driverId: driverProfileId,
+          vehicleId: vehicleId,
+        },
+      })
+    } catch (notificationError) {
+      console.error("[v0] Failed to create contract notification:", notificationError)
+      // Continue even if notification fails
     }
 
     return NextResponse.json(contract)

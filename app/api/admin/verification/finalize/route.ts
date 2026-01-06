@@ -6,10 +6,12 @@ import {
   sendVerificationCompleteEmail,
   sendVerificationRejectedEmail,
 } from "@/lib/mail"
+import { createNotification } from "@/lib/notifications"
+import { NotificationType, NotificationPriority } from "@prisma/client"
 
 export async function POST(req: NextRequest) {
   try {
-    await requireAdmin()
+    const session = await requireAdmin()
     const body = await req.json()
 
     // Validate input
@@ -79,6 +81,26 @@ export async function POST(req: NextRequest) {
     } catch (emailError) {
       console.error("[v0] Failed to send verification email:", emailError)
       // Continue even if email fails
+    }
+
+    // Create notification
+    try {
+      const driverName = profile.user.name || "Driver"
+      
+      await createNotification({
+        userId: session.user.id,
+        type: status === "VERIFIED" ? NotificationType.VERIFICATION_COMPLETE : NotificationType.VERIFICATION_REJECTED,
+        priority: NotificationPriority.HIGH,
+        title: status === "VERIFIED" ? "Verification complete" : "Verification rejected",
+        message: `${driverName}'s verification was ${status === "VERIFIED" ? "completed" : "rejected"}.`,
+        link: "/admin/verification",
+        metadata: {
+          driverId: driverProfileId,
+        },
+      })
+    } catch (notificationError) {
+      console.error("[v0] Failed to create verification notification:", notificationError)
+      // Continue even if notification fails
     }
 
     return NextResponse.json({ success: true })

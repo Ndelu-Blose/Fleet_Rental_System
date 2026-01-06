@@ -18,17 +18,29 @@ export async function POST(request: Request) {
     }
 
     const user = await prisma.user.findUnique({
-      where: { email },
+      where: { email: email.toLowerCase().trim() },
       include: { driverProfile: true },
     })
 
-    if (!user || !user.password || !user.isActive) {
+    if (!user) {
+      console.error("[Auth] User not found:", email)
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
+    }
+
+    if (!user.password) {
+      console.error("[Auth] User has no password set:", email)
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
+    }
+
+    if (!user.isActive) {
+      console.error("[Auth] User account is inactive:", email)
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     const isValid = await bcrypt.compare(password, user.password)
 
     if (!isValid) {
+      console.error("[Auth] Password mismatch for user:", email)
       return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
@@ -41,7 +53,7 @@ export async function POST(request: Request) {
       driverProfileId: user.driverProfile?.id,
     })
   } catch (error) {
-    console.error("[v0] Verify credentials error:", error)
+    console.error("[Auth] Verify credentials error:", error)
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }

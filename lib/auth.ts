@@ -27,13 +27,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           )
 
           if (!response.ok) {
+            console.error("[Auth] Verify credentials failed:", response.status, response.statusText)
             return null
           }
 
           const user = await response.json()
           return user
         } catch (error) {
-          console.error("[v0] Auth error:", error)
+          console.error("[Auth] Auth error:", error)
           return null
         }
       },
@@ -56,6 +57,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         session.user.driverProfileId = token.driverProfileId as string | undefined
       }
       return session
+    },
+    async redirect({ url, baseUrl }) {
+      // Handle redirects after login
+      if (url.startsWith("/")) return `${baseUrl}${url}`
+      if (new URL(url).origin === baseUrl) return url
+      return baseUrl
     },
   },
   pages: {
