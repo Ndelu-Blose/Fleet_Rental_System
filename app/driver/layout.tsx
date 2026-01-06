@@ -20,7 +20,7 @@ export default async function DriverLayout({ children }: { children: React.React
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Car className="h-6 w-6" />
-              <h1 className="text-xl font-bold">Fleet Rental</h1>
+              <h1 className="text-xl font-bold">FleetHub</h1>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">{session.user.email}</span>

@@ -108,6 +108,8 @@ model User {
   resetPasswordToken   String?   @unique
   resetPasswordExpires DateTime?
 
+  emailChangePending String?
+
   driverProfile DriverProfile?
 
   createdAt DateTime @default(now())

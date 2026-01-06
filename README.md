@@ -1,4 +1,4 @@
-# Fleet Rental System
+# FleetHub
 
 A comprehensive fleet rental management system built with Next.js, Prisma, and PostgreSQL. This system allows administrators to manage vehicles, drivers, contracts, and payments, while drivers can manage their profiles, documents, and rental payments.
 

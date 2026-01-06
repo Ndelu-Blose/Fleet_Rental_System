@@ -3,7 +3,7 @@ import { requireAdmin } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
 import { signOut } from "@/lib/auth"
 import Link from "next/link"
-import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus } from "lucide-react"
+import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus, UserCircle } from "lucide-react"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin()
@@ -20,7 +20,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Car className="h-6 w-6" />
-              <h1 className="text-xl font-bold">Fleet Admin</h1>
+              <h1 className="text-xl font-bold">FleetHub Admin</h1>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">{session.user.email}</span>
@@ -88,6 +88,15 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
               Payments
+            </div>
+          </Link>
+          <Link
+            href="/admin/profile"
+            className="px-4 py-2 text-sm font-medium hover:text-primary border-b-2 border-transparent hover:border-primary"
+          >
+            <div className="flex items-center gap-2">
+              <UserCircle className="h-4 w-4" />
+              Profile
             </div>
           </Link>
         </nav>

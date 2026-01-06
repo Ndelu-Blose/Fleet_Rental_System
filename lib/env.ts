@@ -8,7 +8,7 @@ export const env = {
   },
   mail: {
     resendApiKey: process.env.RESEND_API_KEY!,
-    from: process.env.MAIL_FROM || "Fleet Rental <noreply@fleet.com>",
+    from: process.env.MAIL_FROM || "FleetHub <noreply@fleethub.com>",
   },
   supabase: {
     url: process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL!,

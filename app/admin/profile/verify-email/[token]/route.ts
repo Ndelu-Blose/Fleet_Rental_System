@@ -1,0 +1,67 @@
+import { type NextRequest, NextResponse } from "next/server"
+import { prisma } from "@/lib/prisma"
+import { sendEmailChangeConfirmationEmail } from "@/lib/mail"
+import { redirect } from "next/navigation"
+
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { token: string } }
+) {
+  try {
+    const { token } = params
+
+    // Find user by verification token
+    const user = await prisma.user.findUnique({
+      where: { activationToken: token },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        activationExpires: true,
+        emailChangePending: true,
+      },
+    })
+
+    if (!user) {
+      return redirect("/admin/profile?error=invalid_token")
+    }
+
+    // Check if token expired
+    if (!user.activationExpires || user.activationExpires < new Date()) {
+      return redirect("/admin/profile?error=expired_token")
+    }
+
+    if (!user.emailChangePending) {
+      return redirect("/admin/profile?error=no_pending_email")
+    }
+
+    const oldEmail = user.email
+    const newEmail = user.emailChangePending
+
+    // Update email
+    await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        email: newEmail,
+        isEmailVerified: true,
+        activationToken: null,
+        activationExpires: null,
+        emailChangePending: null,
+      },
+    })
+
+    // Send confirmation to old email
+    try {
+      await sendEmailChangeConfirmationEmail(oldEmail, newEmail, user.name || "Admin")
+    } catch (emailError) {
+      console.error("[Admin] Failed to send confirmation email:", emailError)
+      // Continue even if confirmation email fails
+    }
+
+    return redirect("/admin/profile?success=email_verified")
+  } catch (error) {
+    console.error("[Admin] Verify email error:", error)
+    return redirect("/admin/profile?error=verification_failed")
+  }
+}
+
