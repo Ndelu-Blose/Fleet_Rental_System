@@ -42,35 +42,35 @@ export async function POST(req: NextRequest) {
       },
     })
 
-    // Send activation email
+    // Send activation email (non-blocking - token is already updated)
+    let emailSent = false
+    let emailError: string | null = null
+    
     try {
       await sendActivationEmail(user.email, user.name || "Driver", activationToken)
-    } catch (emailError: any) {
+      emailSent = true
+      console.log("[Resend Activation] Email sent successfully")
+    } catch (emailErr: any) {
       const errorMessage = 
-        emailError?.message ||
-        emailError?.response?.data?.message ||
-        emailError?.error?.message ||
-        String(emailError)
+        emailErr?.message ||
+        emailErr?.response?.data?.message ||
+        emailErr?.error?.message ||
+        String(emailErr)
       
-      console.error("[Resend Activation] Failed to send email:", errorMessage, emailError)
-      return NextResponse.json(
-        { 
-          error: "Failed to send activation email", 
-          details: errorMessage,
-          // Include full error for debugging
-          errorRaw: process.env.NODE_ENV === 'development' ? {
-            message: errorMessage,
-            name: emailError?.name,
-            stack: emailError?.stack,
-          } : undefined,
-        },
-        { status: 500 }
-      )
+      emailError = errorMessage
+      console.error("[Resend Activation] Email failed (non-blocking):", errorMessage, emailErr)
+      // Continue - don't block the flow, token is already updated
     }
 
+    // ✅ Never return 500 just because email failed
+    // Token is updated, user can still activate via link
     return NextResponse.json({
       success: true,
-      message: "Activation email sent successfully",
+      emailSent,
+      message: emailSent
+        ? "Activation email sent successfully"
+        : "Activation email could not be sent, but activation link is still valid. You can copy it from the driver menu.",
+      ...(emailError && { emailError }),
     })
   } catch (error) {
     console.error("[Resend Activation] Error:", error)

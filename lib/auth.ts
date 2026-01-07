@@ -33,7 +33,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           if (!user.isActive) {
-            console.error("[Auth] User account is inactive:", credentials.email)
+            console.error("[Auth] LOGIN BLOCKED: user inactive", {
+              email: credentials.email,
+              userId: user.id,
+              isActive: user.isActive,
+              isEmailVerified: user.isEmailVerified,
+            })
             return null
           }
 
@@ -44,9 +49,21 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           )
 
           if (!isValid) {
-            console.error("[Auth] Password mismatch for user:", credentials.email)
+            console.error("[Auth] LOGIN BLOCKED: password mismatch", {
+              email: credentials.email,
+              userId: user.id,
+            })
             return null
           }
+          
+          // Log successful login for debugging
+          console.log("[Auth] Login successful", {
+            email: credentials.email,
+            userId: user.id,
+            role: user.role,
+            isActive: user.isActive,
+            isEmailVerified: user.isEmailVerified,
+          })
 
           // Return user object for NextAuth
           return {

@@ -35,12 +35,14 @@ export async function POST(req: NextRequest) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    // Update user
+    // ✅ IMPORTANT: Complete activation in one atomic update
+    // Must set ALL flags so login works immediately
     await prisma.user.update({
       where: { id: user.id },
       data: {
         password: hashedPassword,
         isEmailVerified: true,
+        isActive: true, // ✅ CRITICAL: Must be active to login
         activationToken: null,
         activationExpires: null,
       },
