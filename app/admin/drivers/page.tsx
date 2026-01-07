@@ -99,9 +99,21 @@ export default function AdminDriversPage() {
         setActivationLink(data.activationLink)
         setFormData({ email: "", name: "", phone: "" })
         await fetchDrivers()
+        if (data.emailSent) {
+          toast.success(data.message || "Driver created and activation email sent successfully")
+        } else {
+          toast.warning(data.message || "Driver created but email failed to send. Use 'Resend Activation Email'.")
+        }
+      } else {
+        // Show error message from API
+        const errorMessage = data.error || "Failed to create driver"
+        const details = data.details ? `: ${JSON.stringify(data.details)}` : ""
+        toast.error(`${errorMessage}${details}`)
+        console.error("Create driver error:", data)
       }
     } catch (error) {
       console.error("Failed to create driver:", error)
+      toast.error("Failed to create driver. Please try again.")
     } finally {
       setCreating(false)
     }

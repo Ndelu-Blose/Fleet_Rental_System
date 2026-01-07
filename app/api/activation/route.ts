@@ -16,21 +16,35 @@ export async function POST(req: NextRequest) {
     // Validate input
     const validationResult = createDriverSchema.safeParse(body)
     if (!validationResult.success) {
+      const errorMessages = validationResult.error.errors.map((e) => `${e.path.join(".")}: ${e.message}`).join(", ")
       return NextResponse.json(
-        { error: "Validation failed", details: validationResult.error.errors },
+        { 
+          error: "Validation failed", 
+          message: errorMessages,
+          details: validationResult.error.errors 
+        },
         { status: 400 }
       )
     }
 
     const { email, name, phone } = validationResult.data
 
+    // Normalize email (lowercase, trim)
+    const normalizedEmail = email.toLowerCase().trim()
+
     // Check if user already exists
     const existing = await prisma.user.findUnique({
-      where: { email },
+      where: { email: normalizedEmail },
     })
 
     if (existing) {
-      return NextResponse.json({ error: "User already exists" }, { status: 400 })
+      return NextResponse.json(
+        { 
+          error: "User already exists", 
+          message: `A driver with email ${normalizedEmail} already exists. Use "Resend Activation Email" if needed.`
+        }, 
+        { status: 400 }
+      )
     }
 
     // Generate activation token
@@ -40,9 +54,9 @@ export async function POST(req: NextRequest) {
     // Create user and driver profile
     const user = await prisma.user.create({
       data: {
-        email,
-        name,
-        phone,
+        email: normalizedEmail,
+        name: name?.trim() || null,
+        phone: phone?.trim() || null,
         role: "DRIVER",
         activationToken,
         activationExpires,
@@ -57,13 +71,21 @@ export async function POST(req: NextRequest) {
     })
 
     // Send activation email via Resend
+    let emailSent = false
     try {
-      await sendActivationEmail(email, name || "Driver", activationToken)
+      await sendActivationEmail(normalizedEmail, name || "Driver", activationToken)
+      emailSent = true
+      logger.info("Activation email sent successfully", {
+        ...getRequestContext(req),
+        email: normalizedEmail,
+        userId: user.id,
+      })
     } catch (emailError) {
       logger.error("Failed to send activation email", emailError, {
         ...getRequestContext(req),
-        email,
+        email: normalizedEmail,
         userId: user.id,
+        error: String(emailError),
       })
       // Continue even if email fails - activation link is still returned
     }
@@ -72,18 +94,39 @@ export async function POST(req: NextRequest) {
     const activationLink = `${emailConfig.baseUrl}/activate/${activationToken}`
     logger.info("Driver activation created", {
       ...getRequestContext(req),
-      email,
+      email: normalizedEmail,
       userId: user.id,
       activationLink,
+      emailSent,
     })
 
     return NextResponse.json({
       success: true,
       userId: user.id,
       activationLink,
+      emailSent,
+      message: emailSent 
+        ? "Driver created and activation email sent successfully" 
+        : "Driver created but activation email failed to send. Use 'Resend Activation Email' to send it manually.",
     })
-  } catch (error) {
+  } catch (error: any) {
     logger.error("Failed to create driver", error, getRequestContext(req))
-    return NextResponse.json({ error: "Failed to create driver" }, { status: 500 })
+    
+    // Handle specific Prisma errors
+    if (error?.code === "P2002") {
+      return NextResponse.json(
+        { error: "User already exists", message: "A driver with this email already exists." },
+        { status: 400 }
+      )
+    }
+    
+    return NextResponse.json(
+      { 
+        error: "Failed to create driver", 
+        message: error?.message || "An unexpected error occurred",
+        details: process.env.NODE_ENV === "development" ? String(error) : undefined
+      }, 
+      { status: 500 }
+    )
   }
 }
