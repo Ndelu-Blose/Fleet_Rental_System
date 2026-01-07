@@ -7,7 +7,6 @@ const nextConfig = {
     unoptimized: true,
   },
   // Performance optimizations
-  swcMinify: true,
   compiler: {
     removeConsole: process.env.NODE_ENV === 'production',
   },
@@ -46,29 +45,8 @@ const nextConfig = {
       'date-fns',
     ],
   },
-  // Optimize webpack for faster dev builds
-  webpack: (config, { dev, isServer }) => {
-    if (dev) {
-      // Faster builds in development
-      config.cache = {
-        type: 'filesystem',
-        buildDependencies: {
-          config: [__filename],
-        },
-      };
-      // Reduce module resolution overhead
-      config.resolve.symlinks = false;
-      if (!isServer) {
-        // Optimize client-side builds
-        config.optimization = {
-          ...config.optimization,
-          removeAvailableModules: false,
-          removeEmptyChunks: false,
-        };
-      }
-    }
-    return config;
-  },
+  // Explicitly use Turbopack (default in Next.js 16)
+  turbopack: {},
 }
 
 export default nextConfig
