@@ -110,7 +110,15 @@ export async function POST(req: NextRequest) {
         : "Driver created but activation email failed to send. Use 'Resend Activation Email' to send it manually.",
     })
   } catch (error: any) {
-    logger.error("Failed to create driver", error, getRequestContext(req))
+    // Re-throw Next.js redirect errors (they're special and should propagate)
+    if (error?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw error;
+    }
+    
+    logger.error("Failed to create driver", error, {
+      ...getRequestContext(req),
+      stack: error instanceof Error ? error.stack : undefined,
+    })
     
     // Handle specific Prisma errors
     if (error?.code === "P2002") {

@@ -6,6 +6,7 @@ import {
   markAllAsRead,
   markAsRead,
 } from "@/lib/notifications";
+import { logger, getRequestContext } from "@/lib/logger";
 
 export async function GET(req: NextRequest) {
   try {
@@ -21,8 +22,24 @@ export async function GET(req: NextRequest) {
     ]);
 
     return NextResponse.json({ notifications, unreadCount });
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to fetch notifications" }, { status: 500 });
+  } catch (err: any) {
+    // Re-throw Next.js redirect errors (they're special and should propagate)
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw err;
+    }
+    
+    logger.error("Failed to fetch notifications", err, {
+      ...getRequestContext(req),
+      error: String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    return NextResponse.json(
+      { 
+        error: "Failed to fetch notifications",
+        message: err instanceof Error ? err.message : "An unexpected error occurred",
+      },
+      { status: 500 }
+    );
   }
 }
 
@@ -46,8 +63,24 @@ export async function PATCH(req: NextRequest) {
     }
 
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
-  } catch (err) {
-    return NextResponse.json({ error: "Failed to update notifications" }, { status: 500 });
+  } catch (err: any) {
+    // Re-throw Next.js redirect errors (they're special and should propagate)
+    if (err?.digest?.startsWith("NEXT_REDIRECT")) {
+      throw err;
+    }
+    
+    logger.error("Failed to update notifications", err, {
+      ...getRequestContext(req),
+      error: String(err),
+      stack: err instanceof Error ? err.stack : undefined,
+    });
+    return NextResponse.json(
+      { 
+        error: "Failed to update notifications",
+        message: err instanceof Error ? err.message : "An unexpected error occurred",
+      },
+      { status: 500 }
+    );
   }
 }
 
