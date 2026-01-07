@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye } from "lucide-react"
+import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye, Copy, ExternalLink } from "lucide-react"
 
 type Driver = {
   id: string
@@ -62,6 +62,7 @@ export default function AdminDriversPage() {
   const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null)
   const [deleting, setDeleting] = useState(false)
   const [resendingEmail, setResendingEmail] = useState<string | null>(null)
+  const [copyingLink, setCopyingLink] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: "",
     name: "",
@@ -174,6 +175,26 @@ export default function AdminDriversPage() {
     }
   }
 
+  const handleCopyActivationLink = async (driverId: string) => {
+    setCopyingLink(driverId)
+    try {
+      const res = await fetch(`/api/admin/drivers/${driverId}/activation-link`)
+      const data = await res.json()
+
+      if (res.ok && data.activationLink) {
+        await navigator.clipboard.writeText(data.activationLink)
+        toast.success("Activation link copied to clipboard")
+      } else {
+        toast.error(data.error || "Failed to get activation link")
+      }
+    } catch (error) {
+      console.error("Failed to copy activation link:", error)
+      toast.error("Failed to copy activation link")
+    } finally {
+      setCopyingLink(null)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "VERIFIED":
@@ -263,17 +284,30 @@ export default function AdminDriversPage() {
                         View Details
                       </DropdownMenuItem>
                       {!driver.user.isEmailVerified && (
-                        <DropdownMenuItem
-                          onClick={() => handleResendActivation(driver.user.id)}
-                          disabled={resendingEmail === driver.user.id}
-                        >
-                          {resendingEmail === driver.user.id ? (
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          ) : (
-                            <MailCheck className="mr-2 h-4 w-4" />
-                          )}
-                          Resend Activation Email
-                        </DropdownMenuItem>
+                        <>
+                          <DropdownMenuItem
+                            onClick={() => handleResendActivation(driver.user.id)}
+                            disabled={resendingEmail === driver.user.id}
+                          >
+                            {resendingEmail === driver.user.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <MailCheck className="mr-2 h-4 w-4" />
+                            )}
+                            Resend Activation Email
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleCopyActivationLink(driver.id)}
+                            disabled={copyingLink === driver.id}
+                          >
+                            {copyingLink === driver.id ? (
+                              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                              <Copy className="mr-2 h-4 w-4" />
+                            )}
+                            Copy Activation Link
+                          </DropdownMenuItem>
+                        </>
                       )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
@@ -314,22 +348,92 @@ export default function AdminDriversPage() {
           {activationLink ? (
             <div className="space-y-4">
               {emailSent ? (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                  <p className="text-sm text-green-900 font-medium mb-2">Driver created successfully!</p>
-                  <p className="text-xs text-green-700 mb-2">Activation email has been sent to the driver.</p>
-                  <p className="text-xs text-green-700 mb-2">Activation link (for testing):</p>
-                  <code className="text-xs bg-white p-2 rounded block mt-2 break-all">{activationLink}</code>
+                <div className="p-4 bg-green-50 border border-green-200 rounded-md space-y-3">
+                  <div>
+                    <p className="text-sm text-green-900 font-medium mb-1">Driver created successfully!</p>
+                    <p className="text-xs text-green-700">Activation email has been sent to the driver.</p>
+                  </div>
+                  <div className="space-y-2">
+                    <p className="text-xs text-green-700 font-medium">Activation link (for testing):</p>
+                    <div className="rounded-md bg-white border border-green-200 p-2">
+                      <code className="text-xs break-all block">{activationLink}</code>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(activationLink)
+                            toast.success("Activation link copied to clipboard")
+                          } catch (err) {
+                            toast.error("Could not copy the link")
+                          }
+                        }}
+                      >
+                        <Copy className="mr-2 h-3 w-3" />
+                        Copy Link
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => window.open(activationLink, "_blank")}
+                      >
+                        <ExternalLink className="mr-2 h-3 w-3" />
+                        Open Link
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               ) : (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                  <p className="text-sm text-yellow-900 font-medium mb-2">Driver created, but email failed to send</p>
-                  {emailError && (
-                    <p className="text-xs text-yellow-800 mb-2">Error: {emailError}</p>
-                  )}
-                  <p className="text-xs text-yellow-700 mb-2">
-                    Please use the "Resend Activation Email" option from the driver's menu, or copy the link below:
-                  </p>
-                  <code className="text-xs bg-white p-2 rounded block mt-2 break-all">{activationLink}</code>
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md space-y-3">
+                  <div>
+                    <p className="text-sm text-yellow-900 font-medium mb-1">Driver created, but email couldn't be sent</p>
+                    {emailError && (
+                      <p className="text-xs text-yellow-800 mb-2">Error: {emailError}</p>
+                    )}
+                    <p className="text-xs text-yellow-700">
+                      No stress — you can copy the activation link below and send it to the driver via WhatsApp/SMS.
+                    </p>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="rounded-md bg-white border border-yellow-200 p-2">
+                      <code className="text-xs break-all block">{activationLink}</code>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={async () => {
+                          try {
+                            await navigator.clipboard.writeText(activationLink)
+                            toast.success("Activation link copied to clipboard")
+                          } catch (err) {
+                            toast.error("Could not copy the link")
+                          }
+                        }}
+                      >
+                        <Copy className="mr-2 h-3 w-3" />
+                        Copy Link
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => window.open(activationLink, "_blank")}
+                      >
+                        <ExternalLink className="mr-2 h-3 w-3" />
+                        Open Link
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
               <Button
