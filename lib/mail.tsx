@@ -39,37 +39,48 @@ export async function sendActivationEmail(email: string, name: string, token: st
   const subject = "Activate your FleetHub account"
 
   try {
-    const result = await resend.emails.send({
-      from, // ✅ THIS must use RESEND_FROM
+    const response = await resend.emails.send({
+      from, // ✅ Uses RESEND_FROM (production) or MAIL_FROM (dev) or test sender
       to: email,
       subject,
       html: activationEmailTemplate(name, activationUrl),
       // No replyTo for activation emails (matches email change verification pattern)
     })
 
-    // Resend sometimes returns an "error" field instead of throwing
-    // so we handle both.
-    // @ts-ignore
-    if (result?.error) {
-      // @ts-ignore
-      throw new Error(result.error.message || "Resend returned an error")
+    // ✅ SUCCESS condition: Resend returns { id: "email_xxxxx" } on success
+    // It does NOT return { error: ... } on success
+    // It only throws on network/auth errors
+    if (!response?.id) {
+      // Log the full response for debugging
+      console.error("[sendActivationEmail] Resend response missing ID:", JSON.stringify(response, null, 2))
+      throw new Error(
+        `Resend did not return an email ID. Response: ${JSON.stringify(response)}`
+      )
     }
 
-    // Verify that Resend actually returned a success response
-    if (!result || !result.id) {
-      throw new Error("Resend API returned an invalid response. Email may not have been sent.")
-    }
+    // Optional: log for audit/debug
+    console.log("[Resend] Activation email sent successfully:", {
+      resendId: response.id,
+      to: email,
+      from,
+    })
 
-    return result
+    return response
   } catch (err: any) {
-    // Bubble up a helpful error message
+    // Extract error message from various possible formats
     const message =
       err?.message ||
       err?.response?.data?.message ||
       err?.error?.message ||
       String(err)
 
-    console.error("[sendActivationEmail] failed:", message, err)
+    console.error("[sendActivationEmail] Failed to send:", {
+      message,
+      error: err,
+      from,
+      to: email,
+    })
+    
     throw new Error(message)
   }
 }
