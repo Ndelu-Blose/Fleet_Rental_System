@@ -5,16 +5,21 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
+import { RefreshButton } from "./_components/refresh-button"
 
 // Force dynamic rendering to ensure Server Actions work on Vercel
 export const dynamic = "force-dynamic"
 export const revalidate = 0
 
+// Prevent caching of login page to avoid stale session state
+export const fetchCache = "force-no-store"
+
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ error?: string; message?: string }>
+  searchParams?: Promise<{ error?: string; message?: string; signedOut?: string }>
 }) {
+  // Force fresh session check (no cache)
   const session = await auth()
   const params = await searchParams
 
@@ -54,9 +59,20 @@ export default async function LoginPage({
         </CardHeader>
         <CardContent>
           <form action={handleLogin} className="space-y-4">
+            {params?.signedOut && (
+              <div className="rounded-md bg-blue-500/15 p-3 text-sm text-blue-600 space-y-2">
+                <p>You've been signed out successfully.</p>
+                <RefreshButton />
+              </div>
+            )}
             {params?.error && (
-              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive">
-                {params.error}
+              <div className="rounded-md bg-destructive/15 p-3 text-sm text-destructive space-y-2">
+                <p>{params.error}</p>
+                {params.error.includes("error occurred") && (
+                  <p className="text-xs text-destructive/80">
+                    If you just signed out, please refresh the page and try again.
+                  </p>
+                )}
               </div>
             )}
             {params?.message && (

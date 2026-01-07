@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/permissions"
 import { Button } from "@/components/ui/button"
 import { signOut } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
+import { redirect } from "next/navigation"
 import Link from "next/link"
 import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus, UserCircle, Settings } from "lucide-react"
 import { NotificationsDropdown } from "./_components/notifications-dropdown"
@@ -20,7 +21,9 @@ export default async function AdminLayout({ children }: { children: React.ReactN
 
   async function handleSignOut() {
     "use server"
-    await signOut()
+    await signOut({ redirectTo: "/login?signedOut=true", redirect: true })
+    // Force redirect in case signOut doesn't redirect
+    redirect("/login?signedOut=true")
   }
 
   return (

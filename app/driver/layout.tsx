@@ -18,7 +18,9 @@ export default async function DriverLayout({ children }: { children: React.React
 
   async function handleSignOut() {
     "use server"
-    await signOut()
+    await signOut({ redirectTo: "/login?signedOut=true", redirect: true })
+    // Force redirect in case signOut doesn't redirect
+    redirect("/login?signedOut=true")
   }
 
   return (
