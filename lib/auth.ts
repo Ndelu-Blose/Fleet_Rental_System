@@ -28,30 +28,48 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           if (!user.password) {
-            console.error("[Auth] User has no password set:", credentials.email)
-            return null
-          }
-
-          if (!user.isActive) {
-            console.error("[Auth] LOGIN BLOCKED: user inactive", {
+            console.error("[Auth] LOGIN BLOCKED: User has no password set", {
               email: credentials.email,
               userId: user.id,
-              isActive: user.isActive,
-              isEmailVerified: user.isEmailVerified,
+              hasPassword: !!user.password,
             })
             return null
           }
 
-          // Verify password
+          if (!user.isActive) {
+            console.error("[Auth] LOGIN BLOCKED: User account is inactive", {
+              email: credentials.email,
+              userId: user.id,
+              isActive: user.isActive,
+              isEmailVerified: user.isEmailVerified,
+              hasActivationToken: !!user.activationToken,
+            })
+            return null
+          }
+
+          if (!user.isEmailVerified) {
+            console.error("[Auth] LOGIN BLOCKED: Email not verified", {
+              email: credentials.email,
+              userId: user.id,
+              isActive: user.isActive,
+              isEmailVerified: user.isEmailVerified,
+              hasActivationToken: !!user.activationToken,
+            })
+            return null
+          }
+
+          // Verify password - using user.password (matches DB column name)
           const isValid = await bcrypt.compare(
             credentials.password as string,
-            user.password
+            user.password // ✅ Matches DB column: "password" (not "passwordHash")
           )
 
           if (!isValid) {
-            console.error("[Auth] LOGIN BLOCKED: password mismatch", {
+            console.error("[Auth] LOGIN BLOCKED: Password mismatch", {
               email: credentials.email,
               userId: user.id,
+              hasPassword: !!user.password,
+              passwordLength: user.password?.length || 0,
             })
             return null
           }

@@ -70,6 +70,7 @@ export async function POST(req: NextRequest) {
           activationToken,
           activationExpires,
           isEmailVerified: false,
+          isActive: false, // ✅ CRITICAL: User must be inactive until they activate
           driverProfile: {
             create: {},
           },

@@ -60,8 +60,11 @@ export default async function LoginPage({
               </div>
             )}
             {params?.message && (
-              <div className="rounded-md bg-green-500/15 p-3 text-sm text-green-600">
-                {params.message}
+              <div className="rounded-md bg-green-500/15 p-3 text-sm text-green-600 flex items-center gap-2">
+                <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                <span>{params.message}</span>
               </div>
             )}
             <div className="space-y-2">

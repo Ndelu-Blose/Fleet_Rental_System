@@ -37,15 +37,25 @@ export async function POST(req: NextRequest) {
 
     // ✅ IMPORTANT: Complete activation in one atomic update
     // Must set ALL flags so login works immediately
+    // ✅ Using "password" field (matches DB column name, NOT "passwordHash")
     await prisma.user.update({
       where: { id: user.id },
       data: {
-        password: hashedPassword,
+        password: hashedPassword, // ✅ Matches DB column: "password"
         isEmailVerified: true,
         isActive: true, // ✅ CRITICAL: Must be active to login
         activationToken: null,
         activationExpires: null,
       },
+    })
+
+    // Log successful activation for debugging
+    console.log("[Activation] Account activated successfully", {
+      userId: user.id,
+      email: user.email,
+      hasPassword: true,
+      isActive: true,
+      isEmailVerified: true,
     })
 
     // Update profile completion
