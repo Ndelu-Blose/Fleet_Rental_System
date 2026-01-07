@@ -41,18 +41,31 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Trim password to handle any whitespace issues
-    const trimmedPassword = currentPassword.trim()
-    const isPasswordValid = await bcrypt.compare(trimmedPassword, user.password)
+    // Verify password (match login behavior exactly - no trimming first)
+    let isPasswordValid = await bcrypt.compare(currentPassword, user.password)
+    
+    // If password doesn't match, try trimmed version (handles whitespace issues)
+    if (!isPasswordValid) {
+      const trimmedPassword = currentPassword.trim()
+      if (trimmedPassword !== currentPassword) {
+        isPasswordValid = await bcrypt.compare(trimmedPassword, user.password)
+        if (isPasswordValid) {
+          console.warn("[Change Email] Password matched after trimming - whitespace issue detected")
+        }
+      }
+    }
     
     if (!isPasswordValid) {
       console.error("[Change Email] Password validation failed", {
         userId: user.id,
         userEmail: user.email,
-        passwordLength: trimmedPassword.length,
+        passwordLength: currentPassword.length,
         hasPassword: !!user.password,
       })
-      return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 })
+      return NextResponse.json({ 
+        error: "Current password is incorrect",
+        message: "The password you entered does not match your current password. If you recently changed your password, please use the new password."
+      }, { status: 401 })
     }
 
     // Check if email is different
