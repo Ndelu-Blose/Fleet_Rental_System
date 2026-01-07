@@ -82,8 +82,23 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           // For DRIVER: must be true (block null/undefined/false)
           // For ADMIN: only block if explicitly false (allow true/null/undefined)
           if (user.role === "DRIVER") {
+            // Driver must have isEmailVerified === true
             if (user.isEmailVerified !== true) {
               console.error("[Auth] ❌ LOGIN BLOCKED: Driver email not verified", {
+                email,
+                userId: user.id,
+                role: user.role,
+                isActive: user.isActive,
+                isEmailVerified: user.isEmailVerified,
+                isEmailVerifiedType: typeof user.isEmailVerified,
+                isEmailVerifiedValue: user.isEmailVerified,
+              })
+              return null
+            }
+          } else if (user.role === "ADMIN") {
+            // Admin: only block if explicitly false
+            if (user.isEmailVerified === false) {
+              console.error("[Auth] ❌ LOGIN BLOCKED: Admin email not verified", {
                 email,
                 userId: user.id,
                 role: user.role,
@@ -93,28 +108,30 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               return null
             }
           }
-          // For ADMIN: only block if explicitly false
-          // Note: Admin with isEmailVerified = true should pass (which is the case in DB)
-          if (user.role === "ADMIN" && user.isEmailVerified === false) {
-            console.error("[Auth] ❌ LOGIN BLOCKED: Admin email not verified", {
-              email,
-              userId: user.id,
-              role: user.role,
-              isActive: user.isActive,
-              isEmailVerified: user.isEmailVerified,
-            })
-            return null
-          }
 
           // Verify password - using user.password (matches DB column name)
+          console.log("[Auth] 🔒 Starting password comparison...", {
+            email,
+            userId: user.id,
+            passwordHashLength: user.password?.length || 0,
+            passwordHashStartsWith: user.password?.substring(0, 10) || "none",
+            enteredPasswordLength: password?.length || 0,
+          })
+
           let ok = false
           try {
             ok = await bcrypt.compare(password, user.password)
+            console.log("[Auth] 🔒 Password comparison result:", {
+              email,
+              userId: user.id,
+              passwordMatch: ok,
+            })
           } catch (bcryptError) {
             console.error("[Auth] ❌ Password comparison error:", {
               email,
               userId: user.id,
               error: bcryptError instanceof Error ? bcryptError.message : String(bcryptError),
+              stack: bcryptError instanceof Error ? bcryptError.stack : undefined,
             })
             return null
           }
@@ -126,21 +143,24 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               role: user.role,
               hasPassword: true,
               passwordLength: user.password?.length || 0,
+              passwordHashPrefix: user.password?.substring(0, 15) || "none",
             })
             return null
           }
 
           // Log successful login for debugging
-          console.log("[Auth] Login successful", {
+          console.log("[Auth] ✅✅✅ LOGIN SUCCESSFUL - Returning user object", {
             email,
             userId: user.id,
             role: user.role,
             isActive: user.isActive,
             isEmailVerified: user.isEmailVerified,
+            hasDriverProfile: !!user.driverProfile?.id,
+            driverProfileId: user.driverProfile?.id,
           })
 
           // Return user object for NextAuth
-          return {
+          const userObject = {
             id: user.id,
             email: user.email,
             name: user.name,
@@ -148,6 +168,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             isEmailVerified: user.isEmailVerified,
             driverProfileId: user.driverProfile?.id,
           }
+
+          console.log("[Auth] ✅ Returning user object:", userObject)
+          return userObject
         } catch (error) {
           console.error("[Auth] ❌ Auth error:", {
             email,
@@ -165,6 +188,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user, trigger }) {
       // runs on sign-in (user exists) and subsequent calls (user undefined)
       if (user) {
+        console.log("[Auth] 🔑 JWT callback - storing user data:", {
+          userId: user.id,
+          email: user.email,
+          role: user.role,
+          isEmailVerified: user.isEmailVerified,
+          driverProfileId: user.driverProfileId,
+        })
         token.role = user.role
         token.isEmailVerified = user.isEmailVerified
         token.driverProfileId = user.driverProfileId
@@ -172,6 +202,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.name = user.name
         token.sub = user.id // ✅ Explicitly set sub to user.id
         token.lastRefreshed = Date.now()
+        console.log("[Auth] 🔑 JWT token created:", {
+          sub: token.sub,
+          role: token.role,
+          email: token.email,
+        })
       }
 
       // Refresh user data from database if:
@@ -216,12 +251,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token
     },
     async session({ session, token }) {
+      console.log("[Auth] 📋 Session callback - creating session:", {
+        tokenSub: token.sub,
+        tokenRole: token.role,
+        tokenEmail: token.email,
+      })
       session.user.id = token.sub as string
       session.user.role = token.role as "ADMIN" | "DRIVER"
       session.user.isEmailVerified = Boolean(token.isEmailVerified)
       session.user.driverProfileId = token.driverProfileId as string | undefined
       session.user.email = (token.email as string) ?? session.user.email
       session.user.name = (token.name as string) ?? session.user.name
+      console.log("[Auth] 📋 Session created:", {
+        userId: session.user.id,
+        role: session.user.role,
+        email: session.user.email,
+      })
       return session
     },
     async redirect({ url, baseUrl }) {

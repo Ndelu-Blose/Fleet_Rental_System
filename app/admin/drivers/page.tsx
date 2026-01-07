@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye, Copy, ExternalLink, CheckCircle2 } from "lucide-react"
+import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye, Copy, ExternalLink, CheckCircle2, UserCheck } from "lucide-react"
 
 type Driver = {
   id: string
@@ -65,6 +65,7 @@ export default function AdminDriversPage() {
   const [deleting, setDeleting] = useState(false)
   const [resendingEmail, setResendingEmail] = useState<string | null>(null)
   const [copyingLink, setCopyingLink] = useState<string | null>(null)
+  const [activatingDriver, setActivatingDriver] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: "",
     name: "",
@@ -199,6 +200,31 @@ export default function AdminDriversPage() {
     }
   }
 
+  const handleActivateDriver = async (userId: string) => {
+    setActivatingDriver(userId)
+    try {
+      const res = await fetch("/api/admin/drivers/activate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        toast.success("Driver activated successfully. They can now log in.")
+        await fetchDrivers() // Refresh the list
+      } else {
+        toast.error(data.error || "Failed to activate driver")
+      }
+    } catch (error) {
+      console.error("Failed to activate driver:", error)
+      toast.error("Failed to activate driver")
+    } finally {
+      setActivatingDriver(null)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "VERIFIED":
@@ -317,6 +343,19 @@ export default function AdminDriversPage() {
                             Copy Activation Link
                           </DropdownMenuItem>
                         </>
+                      )}
+                      {driver.user.isEmailVerified && !driver.user.isActive && (
+                        <DropdownMenuItem
+                          onClick={() => handleActivateDriver(driver.user.id)}
+                          disabled={activatingDriver === driver.user.id}
+                        >
+                          {activatingDriver === driver.user.id ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <UserCheck className="mr-2 h-4 w-4" />
+                          )}
+                          Activate Driver (Enable Login)
+                        </DropdownMenuItem>
                       )}
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
