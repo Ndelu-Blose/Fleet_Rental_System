@@ -32,8 +32,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
-    // Verify current password
-    const isPasswordValid = await bcrypt.compare(currentPassword, user.password)
+    // Verify current password (trim to handle whitespace issues)
+    const trimmedPassword = currentPassword.trim()
+    const isPasswordValid = await bcrypt.compare(trimmedPassword, user.password)
     if (!isPasswordValid) {
       return NextResponse.json({ error: "Current password is incorrect" }, { status: 401 })
     }

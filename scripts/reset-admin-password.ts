@@ -8,6 +8,7 @@ async function main() {
   const adminPassword = process.env.ADMIN_PASSWORD || 'changeme123'
 
   console.log(`Resetting password for admin: ${adminEmail}`)
+  console.log(`Using password: ${adminPassword}`)
 
   const admin = await prisma.user.findUnique({
     where: { email: adminEmail },
@@ -23,6 +24,14 @@ async function main() {
     process.exit(1)
   }
 
+  // Verify current password hash (for debugging)
+  if (admin.password) {
+    const testMatch = await bcrypt.compare(adminPassword, admin.password)
+    console.log(`Current password matches: ${testMatch ? '✅ YES' : '❌ NO'}`)
+  } else {
+    console.log(`⚠️  Admin has no password set`)
+  }
+
   const hashedPassword = await bcrypt.hash(adminPassword, 10)
 
   await prisma.user.update({
@@ -30,9 +39,14 @@ async function main() {
     data: { password: hashedPassword },
   })
 
-  console.log(`✅ Admin password reset successfully!`)
+  // Verify the new password
+  const verifyMatch = await bcrypt.compare(adminPassword, hashedPassword)
+  console.log(`New password verified: ${verifyMatch ? '✅ YES' : '❌ NO'}`)
+
+  console.log(`\n✅ Admin password reset successfully!`)
   console.log(`   Email: ${adminEmail}`)
   console.log(`   Password: ${adminPassword}`)
+  console.log(`\n⚠️  You can now log in with these credentials.`)
 }
 
 main()
