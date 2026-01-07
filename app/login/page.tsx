@@ -5,7 +5,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
-import { AuthError } from "next-auth"
 
 export default async function LoginPage({
   searchParams,
@@ -24,39 +23,17 @@ export default async function LoginPage({
     try {
       const email = formData.get("email") as string
       const password = formData.get("password") as string
-      
-      // Verify credentials first to determine redirect path
-      const verifyResponse = await fetch(
-        `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-credentials`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ email, password }),
-        }
-      )
-      
-      if (!verifyResponse.ok) {
-        redirect("/login?error=Invalid email or password")
-        return
-      }
-      
-      const user = await verifyResponse.json()
-      const redirectPath = user.role === "ADMIN" ? "/admin" : "/driver"
-      
+
+      // Let Auth.js handle verification - redirect to dashboard which will route by role
       await signIn("credentials", {
         email,
         password,
-        redirectTo: redirectPath,
+        redirectTo: "/dashboard",
       })
-    } catch (error) {
-      if (error instanceof AuthError) {
-        switch (error.type) {
-          case "CredentialsSignin":
-            redirect("/login?error=Invalid email or password")
-            break
-          default:
-            redirect("/login?error=An error occurred. Please try again.")
-        }
+    } catch (error: any) {
+      // Handle authentication errors
+      if (error?.type === "CredentialsSignin" || error?.cause?.err?.message?.includes("credentials")) {
+        redirect("/login?error=Invalid email or password")
       } else {
         console.error("[Login] Unexpected error:", error)
         redirect("/login?error=An error occurred. Please try again.")

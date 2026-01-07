@@ -130,8 +130,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async redirect({ url, baseUrl }) {
       // Handle redirects after login
+      // If URL is relative, make it absolute
       if (url.startsWith("/")) return `${baseUrl}${url}`
+      // If URL is from same origin, allow it
       if (new URL(url).origin === baseUrl) return url
+      // Default to baseUrl
       return baseUrl
     },
   },
