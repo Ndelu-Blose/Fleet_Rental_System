@@ -45,10 +45,25 @@ export async function POST(req: NextRequest) {
     // Send activation email
     try {
       await sendActivationEmail(user.email, user.name || "Driver", activationToken)
-    } catch (emailError) {
-      console.error("[Resend Activation] Failed to send email:", emailError)
+    } catch (emailError: any) {
+      const errorMessage = 
+        emailError?.message ||
+        emailError?.response?.data?.message ||
+        emailError?.error?.message ||
+        String(emailError)
+      
+      console.error("[Resend Activation] Failed to send email:", errorMessage, emailError)
       return NextResponse.json(
-        { error: "Failed to send activation email", details: String(emailError) },
+        { 
+          error: "Failed to send activation email", 
+          details: errorMessage,
+          // Include full error for debugging
+          errorRaw: process.env.NODE_ENV === 'development' ? {
+            message: errorMessage,
+            name: emailError?.name,
+            stack: emailError?.stack,
+          } : undefined,
+        },
         { status: 500 }
       )
     }

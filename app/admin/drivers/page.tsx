@@ -59,6 +59,7 @@ export default function AdminDriversPage() {
   const [activationLink, setActivationLink] = useState("")
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
+  const [emailErrorTechnical, setEmailErrorTechnical] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -102,7 +103,9 @@ export default function AdminDriversPage() {
       if (res.ok) {
         setActivationLink(data.activationLink)
         setEmailSent(data.emailSent || false)
+        // Store both friendly and technical errors
         setEmailError(data.emailError || null)
+        setEmailErrorTechnical(data.emailErrorTechnical || null)
         setFormData({ email: "", name: "", phone: "" })
         await fetchDrivers()
         if (data.emailSent) {
@@ -405,6 +408,19 @@ export default function AdminDriversPage() {
                     <p className="text-xs text-yellow-700">
                       No stress — you can copy the activation link below and send it to the driver via WhatsApp/SMS.
                     </p>
+                    {/* Debug details - show technical error in development */}
+                    {emailErrorTechnical && (
+                      <details className="mt-3 text-xs">
+                        <summary className="cursor-pointer text-yellow-900 font-medium hover:text-yellow-950">
+                          🔍 Debug Details (Technical Error)
+                        </summary>
+                        <div className="mt-2 p-2 bg-white border border-yellow-200 rounded text-yellow-900">
+                          <pre className="whitespace-pre-wrap text-xs overflow-auto max-h-48">
+                            {emailErrorTechnical}
+                          </pre>
+                        </div>
+                      </details>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <div className="rounded-md bg-white border border-yellow-200 p-2">
@@ -447,6 +463,7 @@ export default function AdminDriversPage() {
                   setActivationLink("")
                   setEmailSent(false)
                   setEmailError(null)
+                  setEmailErrorTechnical(null)
                   setShowCreateDialog(false)
                 }}
                 className="w-full"

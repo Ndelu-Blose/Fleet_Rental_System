@@ -144,9 +144,23 @@ export async function POST(req: NextRequest) {
       emailSent,
       // Send friendly message to admin UI (not technical details)
       emailError: friendlyError?.friendlyMessage || null,
-      // Keep technical error in details for support/debugging (not shown in UI)
-      emailErrorTechnical: emailError?.message || null,
+      // Keep technical error in details for support/debugging
+      // Include full error details for debugging
+      emailErrorTechnical: emailError 
+        ? (emailError.message || 
+           (emailError as any)?.response?.data?.message || 
+           JSON.stringify(emailError, null, 2))
+        : null,
       emailErrorDetails: emailErrorDetails || null,
+      // Include raw error object for debugging (in dev mode)
+      emailErrorRaw: process.env.NODE_ENV === 'development' && emailError 
+        ? {
+            message: emailError.message,
+            name: emailError.name,
+            stack: emailError.stack,
+            details: emailErrorDetails,
+          }
+        : null,
       message: emailSent 
         ? "Driver created and activation email sent successfully" 
         : "Driver created successfully. Use the activation link below to share with the driver.",

@@ -71,10 +71,22 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Delete by driverId or userId
+    // IMPORTANT: Delete User first, which cascades to DriverProfile (per schema)
+    // Deleting DriverProfile alone leaves orphaned User records
     if (driverId) {
-      // Delete driver profile (cascades to user due to schema)
-      await prisma.driverProfile.delete({
+      // First get the userId from the driver profile
+      const driver = await prisma.driverProfile.findUnique({
         where: { id: driverId },
+        select: { userId: true },
+      })
+
+      if (!driver) {
+        return NextResponse.json({ error: "Driver not found" }, { status: 404 })
+      }
+
+      // Delete user (cascades to driver profile, documents, contracts, etc.)
+      await prisma.user.delete({
+        where: { id: driver.userId },
       })
     } else if (userId) {
       // Delete user (cascades to driver profile)

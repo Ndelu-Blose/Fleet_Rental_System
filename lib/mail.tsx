@@ -1,5 +1,6 @@
 import { sendEmail } from "@/lib/email/sendEmail"
 import { emailConfig } from "@/lib/email/config"
+import { resend } from "@/lib/email/resend"
 import { activationEmailTemplate } from "@/lib/email/templates/activation"
 import { passwordResetEmailTemplate } from "@/lib/email/templates/passwordReset"
 import { emailChangeVerificationTemplate, emailChangeConfirmationTemplate } from "@/lib/email/templates/emailChange"
@@ -12,22 +13,65 @@ import {
 } from "@/lib/email/templates/verification"
 import { contractCreatedTemplate } from "@/lib/email/templates/contract"
 
-export async function sendActivationEmail(email: string, name: string, token: string) {
-  const activationUrl = `${emailConfig.baseUrl}/activate/${token}`
+/**
+ * Get the "from" email address with proper priority:
+ * 1. RESEND_FROM (production - verified domain)
+ * 2. MAIL_FROM (dev fallback)
+ * 3. Test sender (onboarding@resend.dev)
+ */
+function getFrom() {
+  // ✅ Production sender (your verified domain)
+  const resendFrom = process.env.RESEND_FROM?.trim()
+  
+  // Optional fallback (dev only)
+  const mailFrom = process.env.MAIL_FROM?.trim()
+  
+  return resendFrom || mailFrom || "FleetHub <onboarding@resend.dev>"
+}
 
-  const result = await sendEmail({
-    to: email,
-    subject: "Activate Your Account - FleetHub",
-    html: activationEmailTemplate(name, activationUrl),
-    // No replyTo for activation emails (matches email change verification pattern)
-  })
-  
-  // Verify that Resend actually returned a success response
-  if (!result || !result.id) {
-    throw new Error("Resend API returned an invalid response. Email may not have been sent.")
+export async function sendActivationEmail(email: string, name: string, token: string) {
+  if (!process.env.RESEND_API_KEY) {
+    throw new Error("RESEND_API_KEY is missing in environment variables")
   }
-  
-  return result
+
+  const from = getFrom()
+  const activationUrl = `${emailConfig.baseUrl}/activate/${token}`
+  const subject = "Activate your FleetHub account"
+
+  try {
+    const result = await resend.emails.send({
+      from, // ✅ THIS must use RESEND_FROM
+      to: email,
+      subject,
+      html: activationEmailTemplate(name, activationUrl),
+      // No replyTo for activation emails (matches email change verification pattern)
+    })
+
+    // Resend sometimes returns an "error" field instead of throwing
+    // so we handle both.
+    // @ts-ignore
+    if (result?.error) {
+      // @ts-ignore
+      throw new Error(result.error.message || "Resend returned an error")
+    }
+
+    // Verify that Resend actually returned a success response
+    if (!result || !result.id) {
+      throw new Error("Resend API returned an invalid response. Email may not have been sent.")
+    }
+
+    return result
+  } catch (err: any) {
+    // Bubble up a helpful error message
+    const message =
+      err?.message ||
+      err?.response?.data?.message ||
+      err?.error?.message ||
+      String(err)
+
+    console.error("[sendActivationEmail] failed:", message, err)
+    throw new Error(message)
+  }
 }
 
 export async function sendPaymentReminderEmail(
