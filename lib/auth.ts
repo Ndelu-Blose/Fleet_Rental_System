@@ -6,77 +6,87 @@ import bcrypt from "bcryptjs"
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
+      name: "Credentials",
       credentials: {
-        email: { label: "Email", type: "email" },
+        email: { label: "Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
+        const email = credentials?.email?.toLowerCase().trim()
+        const password = credentials?.password
+
+        if (!email || !password) {
+          console.error("[Auth] Missing credentials")
           return null
         }
 
         try {
-          // Find user by email
+          // Find user by email - using explicit select to match DB schema
           const user = await prisma.user.findUnique({
-            where: { email: (credentials.email as string).toLowerCase().trim() },
-            include: { driverProfile: true },
+            where: { email },
+            select: {
+              id: true,
+              email: true,
+              name: true,
+              role: true,
+              password: true, // ✅ IMPORTANT: your DB column is "password"
+              isEmailVerified: true,
+              isActive: true, // if this exists in your schema
+              driverProfile: { select: { id: true } }, // if relation exists
+            },
           })
 
+          // User not found or no password set
           if (!user) {
-            console.error("[Auth] User not found:", credentials.email)
+            console.error("[Auth] User not found:", email)
             return null
           }
 
           if (!user.password) {
             console.error("[Auth] LOGIN BLOCKED: User has no password set", {
-              email: credentials.email,
+              email,
               userId: user.id,
-              hasPassword: !!user.password,
+              hasPassword: false,
             })
             return null
           }
 
-          if (!user.isActive) {
+          // Optional gates (keep only if you use them)
+          if (user.isActive === false) {
             console.error("[Auth] LOGIN BLOCKED: User account is inactive", {
-              email: credentials.email,
+              email,
               userId: user.id,
               isActive: user.isActive,
               isEmailVerified: user.isEmailVerified,
-              hasActivationToken: !!user.activationToken,
             })
             return null
           }
 
-          if (!user.isEmailVerified) {
+          if (user.isEmailVerified === false) {
             console.error("[Auth] LOGIN BLOCKED: Email not verified", {
-              email: credentials.email,
+              email,
               userId: user.id,
               isActive: user.isActive,
               isEmailVerified: user.isEmailVerified,
-              hasActivationToken: !!user.activationToken,
             })
             return null
           }
 
           // Verify password - using user.password (matches DB column name)
-          const isValid = await bcrypt.compare(
-            credentials.password as string,
-            user.password // ✅ Matches DB column: "password" (not "passwordHash")
-          )
-
-          if (!isValid) {
+          const ok = await bcrypt.compare(password, user.password)
+          if (!ok) {
             console.error("[Auth] LOGIN BLOCKED: Password mismatch", {
-              email: credentials.email,
+              email,
               userId: user.id,
-              hasPassword: !!user.password,
+              hasPassword: true,
               passwordLength: user.password?.length || 0,
             })
             return null
           }
-          
+
           // Log successful login for debugging
           console.log("[Auth] Login successful", {
-            email: credentials.email,
+            email,
             userId: user.id,
             role: user.role,
             isActive: user.isActive,
@@ -99,15 +109,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
+  session: { strategy: "jwt" },
+
   callbacks: {
     async jwt({ token, user, trigger }) {
-      // Initial sign in - store user data
+      // runs on sign-in (user exists) and subsequent calls (user undefined)
       if (user) {
         token.role = user.role
-        token.email = user.email
-        token.name = user.name
         token.isEmailVerified = user.isEmailVerified
         token.driverProfileId = user.driverProfileId
+        token.email = user.email
+        token.name = user.name
+        token.sub = user.id // ✅ Explicitly set sub to user.id
         token.lastRefreshed = Date.now()
       }
 
@@ -153,14 +166,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token
     },
     async session({ session, token }) {
-      if (session.user) {
-        session.user.id = token.sub!
-        session.user.email = (token.email as string) || ""
-        session.user.name = (token.name as string | null) || null
-        session.user.role = token.role as "ADMIN" | "DRIVER"
-        session.user.isEmailVerified = token.isEmailVerified as boolean
-        session.user.driverProfileId = token.driverProfileId as string | undefined
-      }
+      session.user.id = token.sub as string
+      session.user.role = token.role as "ADMIN" | "DRIVER"
+      session.user.isEmailVerified = Boolean(token.isEmailVerified)
+      session.user.driverProfileId = token.driverProfileId as string | undefined
+      session.user.email = (token.email as string) ?? session.user.email
+      session.user.name = (token.name as string) ?? session.user.name
       return session
     },
     async redirect({ url, baseUrl }) {
@@ -176,4 +187,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   pages: {
     signIn: "/login",
   },
+
+  // ✅ Turn this on temporarily to see real auth errors in Vercel logs
+  debug: true,
 })
