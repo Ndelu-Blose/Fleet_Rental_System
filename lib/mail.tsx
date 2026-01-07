@@ -47,10 +47,15 @@ export async function sendActivationEmail(email: string, name: string, token: st
       // No replyTo for activation emails (matches email change verification pattern)
     })
 
-    // ✅ SUCCESS condition: Resend returns { id: "email_xxxxx" } on success
-    // It does NOT return { error: ... } on success
-    // It only throws on network/auth errors
-    if (!response?.id) {
+    // ✅ CORRECT Resend response handling
+    // Resend returns: { data: { id: "email_xxxxx" }, error: null } on success
+    // Or: { data: null, error: { message: "..." } } on failure
+    if (response.error) {
+      throw new Error(response.error.message || "Resend API error")
+    }
+
+    const emailId = response.data?.id
+    if (!emailId) {
       // Log the full response for debugging
       console.error("[sendActivationEmail] Resend response missing ID:", JSON.stringify(response, null, 2))
       throw new Error(
@@ -60,12 +65,13 @@ export async function sendActivationEmail(email: string, name: string, token: st
 
     // Optional: log for audit/debug
     console.log("[Resend] Activation email sent successfully:", {
-      resendId: response.id,
+      resendId: emailId,
       to: email,
       from,
     })
 
-    return response
+    // Return the email ID for tracking
+    return { id: emailId, data: response.data }
   } catch (err: any) {
     // Extract error message from various possible formats
     const message =

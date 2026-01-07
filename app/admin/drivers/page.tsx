@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye, Copy, ExternalLink } from "lucide-react"
+import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye, Copy, ExternalLink, CheckCircle2 } from "lucide-react"
 
 type Driver = {
   id: string
@@ -359,11 +359,16 @@ export default function AdminDriversPage() {
               {emailSent ? (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-md space-y-3">
                   <div>
-                    <p className="text-sm text-green-900 font-medium mb-1">Driver created successfully!</p>
-                    <p className="text-xs text-green-700">Activation email has been sent to the driver.</p>
+                    <p className="text-sm text-green-900 font-medium mb-1 flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Activation email sent
+                    </p>
+                    <p className="text-xs text-green-700">
+                      Ask the driver to check their Inbox (and Spam folder) and click "Activate account" in the email.
+                    </p>
                   </div>
                   <div className="space-y-2">
-                    <p className="text-xs text-green-700 font-medium">Activation link (for testing):</p>
+                    <p className="text-xs text-green-700 font-medium">Activation link (backup):</p>
                     <div className="rounded-md bg-white border border-green-200 p-2">
                       <code className="text-xs break-all block">{activationLink}</code>
                     </div>
@@ -401,21 +406,20 @@ export default function AdminDriversPage() {
               ) : (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md space-y-3">
                   <div>
-                    <p className="text-sm text-yellow-900 font-medium mb-2">Driver created, but email couldn't be sent</p>
-                    {emailError && (
-                      <p className="text-xs text-yellow-800 whitespace-pre-line mb-2">{emailError}</p>
-                    )}
-                    <p className="text-xs text-yellow-700">
-                      No stress — you can copy the activation link below and send it to the driver via WhatsApp/SMS.
+                    <p className="text-sm text-yellow-900 font-medium mb-2">
+                      We couldn't send the email automatically
                     </p>
-                    {/* Debug details - show technical error in development */}
+                    <p className="text-xs text-yellow-700 mb-3">
+                      Copy this activation link and send it to the driver on WhatsApp or SMS.
+                    </p>
+                    {/* Technical details - hidden by default, only for admins */}
                     {emailErrorTechnical && (
-                      <details className="mt-3 text-xs">
-                        <summary className="cursor-pointer text-yellow-900 font-medium hover:text-yellow-950">
-                          🔍 Debug Details (Technical Error)
+                      <details className="mt-2">
+                        <summary className="cursor-pointer text-xs text-yellow-800 font-medium hover:text-yellow-900 underline">
+                          Show technical details
                         </summary>
                         <div className="mt-2 p-2 bg-white border border-yellow-200 rounded text-yellow-900">
-                          <pre className="whitespace-pre-wrap text-xs overflow-auto max-h-48">
+                          <pre className="whitespace-pre-wrap text-xs overflow-auto max-h-32">
                             {emailErrorTechnical}
                           </pre>
                         </div>
@@ -423,6 +427,7 @@ export default function AdminDriversPage() {
                     )}
                   </div>
                   <div className="space-y-2">
+                    <p className="text-xs text-yellow-700 font-medium">Activation link:</p>
                     <div className="rounded-md bg-white border border-yellow-200 p-2">
                       <code className="text-xs break-all block">{activationLink}</code>
                     </div>

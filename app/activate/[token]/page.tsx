@@ -77,13 +77,28 @@ export default function ActivatePage() {
 
       if (!res.ok) {
         // Handle specific error cases with friendly messages
-        if (data.error?.includes("expired")) {
+        const errorMsg = data.error || data.message || "Unknown error"
+        
+        if (errorMsg.includes("expired") || errorMsg.toLowerCase().includes("expired")) {
           setError("This link has expired. Please ask your manager to send you a new activation link.")
-        } else if (data.error?.includes("Invalid")) {
+        } else if (errorMsg.includes("Invalid") || errorMsg.toLowerCase().includes("invalid")) {
           setError("This link has already been used or isn't valid. Please ask your manager for a new link.")
+        } else if (errorMsg.includes("Validation failed")) {
+          setError("There was a problem with the information you entered. Please check your password and try again.")
         } else {
-          setError("We couldn't activate your account right now. Please try again, or contact your manager if the problem continues.")
+          // Show more helpful error message
+          const friendlyError = process.env.NODE_ENV === 'development' && data.message 
+            ? data.message 
+            : "We couldn't activate your account right now. Please try again, or contact your manager if the problem continues."
+          setError(friendlyError)
         }
+        
+        // Log error for debugging
+        console.error("[Activation] Activation failed:", {
+          status: res.status,
+          error: errorMsg,
+          data,
+        })
         return
       }
 

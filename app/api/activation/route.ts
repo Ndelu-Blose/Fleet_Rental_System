@@ -90,11 +90,13 @@ export async function POST(req: NextRequest) {
     try {
       const emailResult = await sendActivationEmail(normalizedEmail, name || "Driver", activationToken)
       emailSent = true
+      // Extract email ID from response (handles both old and new Resend response formats)
+      const emailId = emailResult?.id || (emailResult as any)?.data?.id || null
       logger.info("Activation email sent successfully", {
         ...getRequestContext(req),
         email: normalizedEmail,
         userId: user.id,
-        resendId: (emailResult as any)?.id || null,
+        resendId: emailId,
       })
     } catch (err) {
       emailError = err instanceof Error ? err : new Error(String(err))
