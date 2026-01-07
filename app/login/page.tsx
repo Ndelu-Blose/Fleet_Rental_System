@@ -6,6 +6,10 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 
+// Force dynamic rendering to ensure Server Actions work on Vercel
+export const dynamic = "force-dynamic"
+export const revalidate = 0
+
 export default async function LoginPage({
   searchParams,
 }: {
