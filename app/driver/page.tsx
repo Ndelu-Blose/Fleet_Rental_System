@@ -253,9 +253,11 @@ export default function DriverDashboardPage() {
         <p className="text-muted-foreground mt-1">Welcome back</p>
       </div>
 
-      {/* Card 1: Verification Status */}
-      {profile && (
-        <Card>
+      {/* Grid layout for cards */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Card 1: Verification Status */}
+        {profile && (
+          <Card className="lg:col-span-2">
           <CardHeader>
             <CardTitle>Verification Status</CardTitle>
           </CardHeader>
@@ -288,11 +290,11 @@ export default function DriverDashboardPage() {
             </div>
           </CardContent>
         </Card>
-      )}
+        )}
 
-      {/* Card 2: Vehicle & Contract */}
-      {contract && (
-        <Card>
+        {/* Card 2: Vehicle & Contract */}
+        {contract && (
+          <Card>
           <CardHeader>
             <CardTitle>Assigned Vehicle & Contract</CardTitle>
           </CardHeader>
@@ -328,11 +330,11 @@ export default function DriverDashboardPage() {
               </div>
             </div>
           </CardContent>
-        </Card>
-      )}
+          </Card>
+        )}
 
-      {/* Card 3: Next Payment */}
-      {contract && nextPayment && (
+        {/* Card 3: Next Payment */}
+        {contract && nextPayment && (
         <Card className={new Date(nextPayment.dueDate) <= new Date() ? "border-red-200 bg-red-50/50" : "border-yellow-200"}>
           <CardHeader>
             <CardTitle>Next Payment</CardTitle>
@@ -363,10 +365,10 @@ export default function DriverDashboardPage() {
             </div>
           </CardContent>
         </Card>
-      )}
+        )}
 
-      {/* Card 4: Next Action */}
-      {nextAction && (
+        {/* Card 4: Next Action */}
+        {nextAction && (
         <Card className="border-primary/20 bg-primary/5">
           <CardHeader>
             <CardTitle>What's Next?</CardTitle>
@@ -390,9 +392,10 @@ export default function DriverDashboardPage() {
             </div>
           </CardContent>
         </Card>
-      )}
+        )}
+      </div>
 
-      {/* No Vehicle Assigned */}
+      {/* No Vehicle Assigned - Full width */}
       {!contract && profile?.verificationStatus === "VERIFIED" && (
         <Card>
           <CardContent className="py-12 text-center">
