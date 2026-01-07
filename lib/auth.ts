@@ -31,16 +31,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               role: true,
               password: true, // ✅ IMPORTANT: your DB column is "password"
               isEmailVerified: true,
-              isActive: true, // if this exists in your schema
+              isActive: true, // ✅ This field exists in schema (defaults to true)
               driverProfile: { select: { id: true } }, // if relation exists
             },
           })
 
-          // User not found or no password set
+          // User not found
           if (!user) {
-            console.error("[Auth] User not found:", email)
+            console.error("[Auth] ❌ User not found:", email)
             return null
           }
+
+          // ✅ ENHANCED: Log all user state for debugging
+          console.log("[Auth] ✅ Found user:", {
+            id: user.id,
+            email: user.email,
+            role: user.role,
+            isEmailVerified: user.isEmailVerified,
+            isActive: user.isActive,
+            hasPassword: Boolean(user.password),
+            passwordStartsWith: user.password?.substring(0, 7) || "none",
+            hasDriverProfile: Boolean(user.driverProfile?.id),
+          })
 
           if (!user.password) {
             console.error("[Auth] LOGIN BLOCKED: User has no password set", {
@@ -51,25 +63,48 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return null
           }
 
-          // Optional gates (keep only if you use them)
+          // ✅ Check isActive - only block if explicitly false
+          // Allow null/undefined for backward compatibility (existing users might not have this set)
+          // Schema defaults to true, so new users will have true
           if (user.isActive === false) {
-            console.error("[Auth] LOGIN BLOCKED: User account is inactive", {
+            console.error("[Auth] ❌ LOGIN BLOCKED: User account is inactive", {
               email,
               userId: user.id,
+              role: user.role,
               isActive: user.isActive,
               isEmailVerified: user.isEmailVerified,
             })
             return null
           }
 
-          if (user.isEmailVerified === false) {
-            console.error("[Auth] LOGIN BLOCKED: Email not verified", {
-              email,
-              userId: user.id,
-              isActive: user.isActive,
-              isEmailVerified: user.isEmailVerified,
-            })
-            return null
+          // ✅ Check isEmailVerified - only block if explicitly false
+          // Allow null/undefined for backward compatibility (admin users created before email verification)
+          // For DRIVER role, require email verification (must be true, not null)
+          // For ADMIN role, allow null/undefined but block if explicitly false
+          if (user.role === "DRIVER") {
+            // Drivers must have isEmailVerified === true (not null, not false)
+            if (user.isEmailVerified !== true) {
+              console.error("[Auth] ❌ LOGIN BLOCKED: Driver email not verified", {
+                email,
+                userId: user.id,
+                role: user.role,
+                isActive: user.isActive,
+                isEmailVerified: user.isEmailVerified,
+              })
+              return null
+            }
+          } else if (user.role === "ADMIN") {
+            // Admins: only block if explicitly false (allow null/undefined for backward compatibility)
+            if (user.isEmailVerified === false) {
+              console.error("[Auth] ❌ LOGIN BLOCKED: Admin email not verified", {
+                email,
+                userId: user.id,
+                role: user.role,
+                isActive: user.isActive,
+                isEmailVerified: user.isEmailVerified,
+              })
+              return null
+            }
           }
 
           // Verify password - using user.password (matches DB column name)
@@ -103,7 +138,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             driverProfileId: user.driverProfile?.id,
           }
         } catch (error) {
-          console.error("[Auth] Auth error:", error)
+          console.error("[Auth] ❌ Auth error:", {
+            email,
+            error: error instanceof Error ? error.message : String(error),
+            stack: error instanceof Error ? error.stack : undefined,
+          })
           return null
         }
       },
