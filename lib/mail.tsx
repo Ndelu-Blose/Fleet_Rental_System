@@ -15,12 +15,19 @@ import { contractCreatedTemplate } from "@/lib/email/templates/contract"
 export async function sendActivationEmail(email: string, name: string, token: string) {
   const activationUrl = `${emailConfig.baseUrl}/activate/${token}`
 
-  await sendEmail({
+  const result = await sendEmail({
     to: email,
     subject: "Activate Your Account - FleetHub",
     html: activationEmailTemplate(name, activationUrl),
-    replyTo: emailConfig.replyToEmail, // Replies go to Gmail
+    // No replyTo for activation emails (matches email change verification pattern)
   })
+  
+  // Verify that Resend actually returned a success response
+  if (!result || !result.id) {
+    throw new Error("Resend API returned an invalid response. Email may not have been sent.")
+  }
+  
+  return result
 }
 
 export async function sendPaymentReminderEmail(

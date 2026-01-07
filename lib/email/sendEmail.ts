@@ -17,6 +17,16 @@ export async function sendEmail({ to, subject, html, replyTo, from }: SendEmailP
     throw error
   }
   
+  // Log email attempt for debugging
+  const fromAddress = from || emailConfig.from
+  console.log("[Email] Attempting to send email:", {
+    to,
+    from: fromAddress,
+    subject,
+    hasApiKey: !!emailConfig.apiKey,
+    apiKeyPrefix: emailConfig.apiKey?.substring(0, 10) + "...",
+  })
+  
   try {
     const result = await resend.emails.send({
       from: from || emailConfig.from,
@@ -25,6 +35,31 @@ export async function sendEmail({ to, subject, html, replyTo, from }: SendEmailP
       html,
       ...(replyTo && { replyTo }),
     })
+    
+    // Verify that Resend actually returned a valid response
+    if (!result || typeof result !== 'object') {
+      throw new Error("Resend API returned an invalid response format")
+    }
+    
+    // Check for error in response (Resend sometimes returns errors in the response object)
+    if ('error' in result && result.error) {
+      const errorMsg = typeof result.error === 'string' ? result.error : JSON.stringify(result.error)
+      throw new Error(`Resend API error: ${errorMsg}`)
+    }
+    
+    // Verify we got an ID (indicates successful send)
+    if (!result.id) {
+      console.warn("[Email] Resend API returned response without ID:", result)
+      // Don't throw here - some Resend responses might not have ID immediately
+      // But log it for debugging
+    } else {
+      console.log("[Email] Email sent successfully via Resend:", {
+        resendId: result.id,
+        to,
+        from: fromAddress,
+      })
+    }
+    
     return result
   } catch (error) {
     console.error("[Email] Failed to send email:", error)

@@ -83,21 +83,27 @@ export async function POST(req: NextRequest) {
     // Send activation email via Resend (outside transaction - email is not critical)
     let emailSent = false
     let emailError: Error | null = null
+    let emailErrorDetails: any = null
+    
     try {
-      await sendActivationEmail(normalizedEmail, name || "Driver", activationToken)
+      const emailResult = await sendActivationEmail(normalizedEmail, name || "Driver", activationToken)
       emailSent = true
       logger.info("Activation email sent successfully", {
         ...getRequestContext(req),
         email: normalizedEmail,
         userId: user.id,
+        resendId: (emailResult as any)?.id || null,
       })
     } catch (err) {
       emailError = err instanceof Error ? err : new Error(String(err))
+      emailErrorDetails = (err as any)?.details || null
+      
       logger.error("Failed to send activation email", emailError, {
         ...getRequestContext(req),
         email: normalizedEmail,
         userId: user.id,
         error: String(err),
+        errorDetails: emailErrorDetails,
         stack: emailError.stack,
       })
       // Continue even if email fails - activation link is still returned
@@ -120,6 +126,7 @@ export async function POST(req: NextRequest) {
       activationLink,
       emailSent,
       emailError: emailError?.message || null,
+      emailErrorDetails: emailErrorDetails || null,
       message: emailSent 
         ? "Driver created and activation email sent successfully" 
         : `Driver created but activation email failed to send: ${emailError?.message || "Unknown error"}. Use 'Resend Activation Email' to send it manually.`,
