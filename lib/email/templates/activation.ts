@@ -4,14 +4,14 @@ export function activationEmailTemplate(name: string, activationLink: string) {
   return `
     <div style="font-family: Arial, sans-serif; line-height: 1.6; max-width: 600px; margin: 0 auto; padding: 20px;">
       <div style="background: #111; color: #fff; padding: 20px; text-align: center; border-radius: 8px 8px 0 0;">
-        <h1 style="margin: 0; font-size: 24px;">Welcome to ${emailConfig.appName}!</h1>
+        <h1 style="margin: 0; font-size: 24px;">Account Activation</h1>
       </div>
       
       <div style="background: #fff; padding: 30px; border: 1px solid #e0e0e0; border-top: none; border-radius: 0 0 8px 8px;">
         <h2 style="color: #333; margin-top: 0;">Hello ${name},</h2>
         
         <p style="color: #666; font-size: 16px;">
-          Your driver account has been created. To get started, please activate your account by clicking the button below:
+          Your driver account has been created. Please activate your account and set your password by clicking the button below:
         </p>
         
         <div style="text-align: center; margin: 30px 0;">
@@ -27,7 +27,7 @@ export function activationEmailTemplate(name: string, activationLink: string) {
         </p>
         
         <p style="color: #999; font-size: 12px; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-          If you did not request this account, please ignore this email or contact our support team.
+          If you did not request this account, please ignore this email or contact our support team immediately.
         </p>
       </div>
       

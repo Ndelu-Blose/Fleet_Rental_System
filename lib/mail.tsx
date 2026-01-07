@@ -17,7 +17,7 @@ export async function sendActivationEmail(email: string, name: string, token: st
 
   await sendEmail({
     to: email,
-    subject: "Activate Your FleetHub Account",
+    subject: "Activate Your Account - FleetHub",
     html: activationEmailTemplate(name, activationUrl),
     replyTo: emailConfig.replyToEmail, // Replies go to Gmail
   })
