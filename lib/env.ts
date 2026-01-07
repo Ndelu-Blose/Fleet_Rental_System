@@ -3,8 +3,10 @@ export const env = {
     url: process.env.DATABASE_URL!,
   },
   auth: {
-    secret: process.env.NEXTAUTH_SECRET!,
-    url: process.env.NEXTAUTH_URL || "http://localhost:3000",
+    // Support both NextAuth v4 (NEXTAUTH_*) and Auth.js v5 (AUTH_*) env vars
+    secret: process.env.AUTH_SECRET || process.env.NEXTAUTH_SECRET!,
+    url: process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000",
+    trustHost: process.env.AUTH_TRUST_HOST === "true",
   },
   mail: {
     resendApiKey: process.env.RESEND_API_KEY || "",

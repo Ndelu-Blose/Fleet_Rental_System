@@ -1,6 +1,7 @@
 import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
+import bcrypt from "bcryptjs"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -15,25 +16,47 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         try {
-          const response = await fetch(
-            `${process.env.NEXTAUTH_URL || "http://localhost:3000"}/api/auth/verify-credentials`,
-            {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                email: credentials.email,
-                password: credentials.password,
-              }),
-            },
-          )
+          // Find user by email
+          const user = await prisma.user.findUnique({
+            where: { email: (credentials.email as string).toLowerCase().trim() },
+            include: { driverProfile: true },
+          })
 
-          if (!response.ok) {
-            console.error("[Auth] Verify credentials failed:", response.status, response.statusText)
+          if (!user) {
+            console.error("[Auth] User not found:", credentials.email)
             return null
           }
 
-          const user = await response.json()
-          return user
+          if (!user.password) {
+            console.error("[Auth] User has no password set:", credentials.email)
+            return null
+          }
+
+          if (!user.isActive) {
+            console.error("[Auth] User account is inactive:", credentials.email)
+            return null
+          }
+
+          // Verify password
+          const isValid = await bcrypt.compare(
+            credentials.password as string,
+            user.password
+          )
+
+          if (!isValid) {
+            console.error("[Auth] Password mismatch for user:", credentials.email)
+            return null
+          }
+
+          // Return user object for NextAuth
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            isEmailVerified: user.isEmailVerified,
+            driverProfileId: user.driverProfile?.id,
+          }
         } catch (error) {
           console.error("[Auth] Auth error:", error)
           return null
