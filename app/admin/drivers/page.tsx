@@ -60,6 +60,7 @@ export default function AdminDriversPage() {
   const [emailSent, setEmailSent] = useState(false)
   const [emailError, setEmailError] = useState<string | null>(null)
   const [emailErrorTechnical, setEmailErrorTechnical] = useState<string | null>(null)
+  const [createdDriverEmail, setCreatedDriverEmail] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -432,12 +433,15 @@ export default function AdminDriversPage() {
               {emailSent ? (
                 <div className="p-4 bg-green-50 border border-green-200 rounded-md space-y-3">
                   <div>
-                    <p className="text-sm text-green-900 font-medium mb-1 flex items-center gap-2">
+                    <p className="text-sm text-green-900 font-medium mb-2 flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4" />
-                      Activation email sent
+                      Driver Created
+                    </p>
+                    <p className="text-sm text-green-700 mb-2">
+                      We sent an activation email to: <strong>{createdDriverEmail || formData.email}</strong>
                     </p>
                     <p className="text-xs text-green-700">
-                      Ask the driver to check their Inbox (and Spam folder) and click "Activate account" in the email.
+                      The driver should check their inbox (and spam folder) and click "Activate account" in the email.
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -468,10 +472,41 @@ export default function AdminDriversPage() {
                         variant="outline"
                         size="sm"
                         className="text-xs"
-                        onClick={() => window.open(activationLink, "_blank")}
+                        onClick={async () => {
+                          if (createdDriverEmail) {
+                            setResendingEmail(createdDriverEmail)
+                            try {
+                              const res = await fetch("/api/admin/drivers/resend-activation", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: createdDriverEmail }),
+                              })
+                              const data = await res.json()
+                              if (data.emailSent) {
+                                toast.success("Activation email resent successfully")
+                              } else {
+                                toast.info("Email sending delayed, but you can still use the link below")
+                              }
+                            } catch (error) {
+                              toast.error("Failed to resend email")
+                            } finally {
+                              setResendingEmail(null)
+                            }
+                          }
+                        }}
+                        disabled={!!resendingEmail}
                       >
-                        <ExternalLink className="mr-2 h-3 w-3" />
-                        Open Link
+                        {resendingEmail ? (
+                          <>
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <MailCheck className="mr-2 h-3 w-3" />
+                            Resend Email
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -479,11 +514,15 @@ export default function AdminDriversPage() {
               ) : (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md space-y-3">
                   <div>
-                    <p className="text-sm text-yellow-900 font-medium mb-2">
-                      We couldn't send the email automatically
+                    <p className="text-sm text-yellow-900 font-medium mb-2 flex items-center gap-2">
+                      <CheckCircle2 className="h-4 w-4" />
+                      Driver Created
+                    </p>
+                    <p className="text-sm text-yellow-700 mb-2">
+                      Email delivery delayed. You can still activate the driver via WhatsApp or SMS.
                     </p>
                     <p className="text-xs text-yellow-700 mb-3">
-                      Copy this activation link and send it to the driver on WhatsApp or SMS.
+                      Copy the activation link below and send it to the driver.
                     </p>
                     {/* Technical details - hidden by default, only for admins */}
                     {emailErrorTechnical && (
@@ -527,10 +566,42 @@ export default function AdminDriversPage() {
                         variant="outline"
                         size="sm"
                         className="text-xs"
-                        onClick={() => window.open(activationLink, "_blank")}
+                        onClick={async () => {
+                          if (createdDriverEmail) {
+                            setResendingEmail(createdDriverEmail)
+                            try {
+                              const res = await fetch("/api/admin/drivers/resend-activation", {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({ email: createdDriverEmail }),
+                              })
+                              const data = await res.json()
+                              if (data.emailSent) {
+                                toast.success("Activation email sent successfully")
+                                setEmailSent(true)
+                              } else {
+                                toast.info("Email sending delayed, but you can still use the link below")
+                              }
+                            } catch (error) {
+                              toast.error("Failed to resend email")
+                            } finally {
+                              setResendingEmail(null)
+                            }
+                          }
+                        }}
+                        disabled={!!resendingEmail}
                       >
-                        <ExternalLink className="mr-2 h-3 w-3" />
-                        Open Link
+                        {resendingEmail ? (
+                          <>
+                            <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                            Sending...
+                          </>
+                        ) : (
+                          <>
+                            <MailCheck className="mr-2 h-3 w-3" />
+                            Resend Email
+                          </>
+                        )}
                       </Button>
                     </div>
                   </div>
@@ -542,6 +613,7 @@ export default function AdminDriversPage() {
                   setEmailSent(false)
                   setEmailError(null)
                   setEmailErrorTechnical(null)
+                  setCreatedDriverEmail(null)
                   setShowCreateDialog(false)
                 }}
                 className="w-full"

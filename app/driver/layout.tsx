@@ -5,7 +5,7 @@ import { signOut } from "@/lib/auth"
 import { getSettingBool } from "@/lib/settings"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { Car, User, CreditCard, MapPin } from "lucide-react"
+import { Car, User, CreditCard } from "lucide-react"
 
 export default async function DriverLayout({ children }: { children: React.ReactNode }) {
   // Check maintenance mode
@@ -71,15 +71,6 @@ export default async function DriverLayout({ children }: { children: React.React
             <div className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
               Payments
-            </div>
-          </Link>
-          <Link
-            href="/driver/verify-location"
-            className="px-4 py-2 text-sm font-medium hover:text-primary border-b-2 border-transparent hover:border-primary"
-          >
-            <div className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" />
-              Verify Location
             </div>
           </Link>
         </nav>
