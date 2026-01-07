@@ -26,7 +26,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye, Copy, ExternalLink, CheckCircle2, UserCheck } from "lucide-react"
+import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye, Copy, ExternalLink, CheckCircle2, UserCheck, Lock } from "lucide-react"
 
 type Driver = {
   id: string
@@ -225,6 +225,34 @@ export default function AdminDriversPage() {
     }
   }
 
+  const handleResetPassword = async (driverId: string) => {
+    const newPassword = prompt("Enter a new password for this driver (min 8 characters):")
+    if (!newPassword || newPassword.length < 8) {
+      toast.error("Password must be at least 8 characters")
+      return
+    }
+
+    try {
+      const res = await fetch(`/api/admin/drivers/${driverId}/reset-password`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ newPassword }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        toast.success(`Password reset! Driver can now log in with: ${newPassword}`)
+        await fetchDrivers()
+      } else {
+        toast.error(data.error || "Failed to reset password")
+      }
+    } catch (error) {
+      console.error("Failed to reset password:", error)
+      toast.error("Failed to reset password")
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "VERIFIED":
@@ -357,6 +385,12 @@ export default function AdminDriversPage() {
                           Activate Driver (Enable Login)
                         </DropdownMenuItem>
                       )}
+                      <DropdownMenuItem
+                        onClick={() => handleResetPassword(driver.id)}
+                      >
+                        <Lock className="mr-2 h-4 w-4" />
+                        Reset Password
+                      </DropdownMenuItem>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem
                         onClick={() => {
