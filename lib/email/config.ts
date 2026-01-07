@@ -1,9 +1,16 @@
+// Single source of truth for email "from" address
+// Priority: RESEND_FROM (production) > MAIL_FROM (dev) > test sender
+export const EMAIL_FROM =
+  process.env.RESEND_FROM?.trim() ||
+  process.env.MAIL_FROM?.trim() ||
+  "FleetHub <onboarding@resend.dev>"
+
 export const emailConfig = {
   provider: "resend",
 
   apiKey: process.env.RESEND_API_KEY!,
-  // Use RESEND_FROM env var, fallback to test sender for dev
-  from: process.env.RESEND_FROM?.trim() || process.env.MAIL_FROM || "FleetHub <onboarding@resend.dev>",
+  // Use single EMAIL_FROM constant (Resend-first, MAIL_FROM fallback for dev)
+  from: EMAIL_FROM,
 
   appName: "FleetHub",
   supportEmail: process.env.SUPPORT_EMAIL || "support@fleethub.co.za",

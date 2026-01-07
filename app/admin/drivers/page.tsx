@@ -38,6 +38,7 @@ type Driver = {
     name: string | null
     phone: string | null
     isActive: boolean
+    isEmailVerified: boolean
   }
   contracts: Array<{
     id: string
@@ -255,6 +256,11 @@ export default function AdminDriversPage() {
                       {driver.verificationStatus}
                     </span>
                     <span className="text-xs text-muted-foreground">{driver.completionPercent}% complete</span>
+                    {!driver.user.isEmailVerified && (
+                      <span className="text-xs px-2 py-1 rounded bg-blue-100 text-blue-700">
+                        Activation: Pending
+                      </span>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
@@ -392,9 +398,9 @@ export default function AdminDriversPage() {
               ) : (
                 <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md space-y-3">
                   <div>
-                    <p className="text-sm text-yellow-900 font-medium mb-1">Driver created, but email couldn't be sent</p>
+                    <p className="text-sm text-yellow-900 font-medium mb-2">Driver created, but email couldn't be sent</p>
                     {emailError && (
-                      <p className="text-xs text-yellow-800 mb-2">Error: {emailError}</p>
+                      <p className="text-xs text-yellow-800 whitespace-pre-line mb-2">{emailError}</p>
                     )}
                     <p className="text-xs text-yellow-700">
                       No stress — you can copy the activation link below and send it to the driver via WhatsApp/SMS.

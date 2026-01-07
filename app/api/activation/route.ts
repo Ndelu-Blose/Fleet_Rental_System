@@ -5,6 +5,7 @@ import { sendActivationEmail } from "@/lib/mail"
 import { createDriverSchema } from "@/lib/validations/user"
 import { logger, getRequestContext } from "@/lib/logger"
 import { emailConfig } from "@/lib/email/config"
+import { getFriendlyEmailError } from "@/lib/email/errorMessages"
 import crypto from "crypto"
 
 export async function POST(req: NextRequest) {
@@ -120,16 +121,35 @@ export async function POST(req: NextRequest) {
       emailSent,
     })
 
+    // Convert technical error to friendly message for admin UI
+    const friendlyError = emailError 
+      ? getFriendlyEmailError(emailError.message)
+      : null
+
+    // Log technical error details (for debugging)
+    if (emailError) {
+      logger.error("Activation email failed (technical details)", emailError, {
+        ...getRequestContext(req),
+        email: normalizedEmail,
+        userId: user.id,
+        technicalError: emailError.message,
+        errorDetails: emailErrorDetails,
+      })
+    }
+
     return NextResponse.json({
       success: true,
       userId: user.id,
       activationLink,
       emailSent,
-      emailError: emailError?.message || null,
+      // Send friendly message to admin UI (not technical details)
+      emailError: friendlyError?.friendlyMessage || null,
+      // Keep technical error in details for support/debugging (not shown in UI)
+      emailErrorTechnical: emailError?.message || null,
       emailErrorDetails: emailErrorDetails || null,
       message: emailSent 
         ? "Driver created and activation email sent successfully" 
-        : `Driver created but activation email failed to send: ${emailError?.message || "Unknown error"}. Use 'Resend Activation Email' to send it manually.`,
+        : "Driver created successfully. Use the activation link below to share with the driver.",
     })
   } catch (error: any) {
     // Re-throw Next.js redirect errors (they're special and should propagate)
