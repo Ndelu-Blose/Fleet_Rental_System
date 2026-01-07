@@ -56,6 +56,8 @@ export default function AdminDriversPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [creating, setCreating] = useState(false)
   const [activationLink, setActivationLink] = useState("")
+  const [emailSent, setEmailSent] = useState(false)
+  const [emailError, setEmailError] = useState<string | null>(null)
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null)
   const [deleting, setDeleting] = useState(false)
@@ -97,6 +99,8 @@ export default function AdminDriversPage() {
 
       if (res.ok) {
         setActivationLink(data.activationLink)
+        setEmailSent(data.emailSent || false)
+        setEmailError(data.emailError || null)
         setFormData({ email: "", name: "", phone: "" })
         await fetchDrivers()
         if (data.emailSent) {
@@ -309,14 +313,30 @@ export default function AdminDriversPage() {
 
           {activationLink ? (
             <div className="space-y-4">
-              <div className="p-4 bg-green-50 border border-green-200 rounded-md">
-                <p className="text-sm text-green-900 font-medium mb-2">Driver created successfully!</p>
-                <p className="text-xs text-green-700">Activation link (for testing):</p>
-                <code className="text-xs bg-white p-2 rounded block mt-2 break-all">{activationLink}</code>
-              </div>
+              {emailSent ? (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+                  <p className="text-sm text-green-900 font-medium mb-2">Driver created successfully!</p>
+                  <p className="text-xs text-green-700 mb-2">Activation email has been sent to the driver.</p>
+                  <p className="text-xs text-green-700 mb-2">Activation link (for testing):</p>
+                  <code className="text-xs bg-white p-2 rounded block mt-2 break-all">{activationLink}</code>
+                </div>
+              ) : (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                  <p className="text-sm text-yellow-900 font-medium mb-2">Driver created, but email failed to send</p>
+                  {emailError && (
+                    <p className="text-xs text-yellow-800 mb-2">Error: {emailError}</p>
+                  )}
+                  <p className="text-xs text-yellow-700 mb-2">
+                    Please use the "Resend Activation Email" option from the driver's menu, or copy the link below:
+                  </p>
+                  <code className="text-xs bg-white p-2 rounded block mt-2 break-all">{activationLink}</code>
+                </div>
+              )}
               <Button
                 onClick={() => {
                   setActivationLink("")
+                  setEmailSent(false)
+                  setEmailError(null)
                   setShowCreateDialog(false)
                 }}
                 className="w-full"

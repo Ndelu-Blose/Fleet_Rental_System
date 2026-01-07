@@ -95,8 +95,18 @@ export async function POST(req: NextRequest) {
           emailChangePending: null,
         },
       })
+      const errorMessage = emailError instanceof Error ? emailError.message : String(emailError)
+      const errorDetails = (emailError as any)?.details || {}
+      
       return NextResponse.json(
-        { error: "Failed to send verification email. Please try again." },
+        { 
+          error: "Failed to send verification email. Please try again.",
+          message: errorMessage,
+          errorType: errorDetails.type || (emailError instanceof Error ? emailError.name : 'UnknownError'),
+          details: errorDetails,
+          // Include original error message for debugging
+          originalError: emailError instanceof Error ? emailError.message : String(emailError),
+        },
         { status: 500 }
       )
     }

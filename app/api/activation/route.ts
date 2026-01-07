@@ -119,10 +119,10 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       activationLink,
       emailSent,
+      emailError: emailError?.message || null,
       message: emailSent 
         ? "Driver created and activation email sent successfully" 
         : `Driver created but activation email failed to send: ${emailError?.message || "Unknown error"}. Use 'Resend Activation Email' to send it manually.`,
-      ...(emailError && process.env.NODE_ENV === "development" && { emailError: emailError.message }),
     })
   } catch (error: any) {
     // Re-throw Next.js redirect errors (they're special and should propagate)
@@ -168,11 +168,16 @@ export async function POST(req: NextRequest) {
       }
     }
     
+    const errorMessage = error?.message || "An unexpected error occurred"
+    const errorDetails = (error as any)?.details || {}
+    
     return NextResponse.json(
       { 
         error: "Failed to create driver", 
-        message: error?.message || "An unexpected error occurred",
-        details: process.env.NODE_ENV === "development" ? String(error) : undefined
+        message: errorMessage,
+        errorType: errorDetails.type || (error instanceof Error ? error.name : 'UnknownError'),
+        details: errorDetails,
+        originalError: error instanceof Error ? error.message : String(error),
       }, 
       { status: 500 }
     )
