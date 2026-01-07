@@ -77,14 +77,39 @@ A comprehensive fleet rental management system built with Next.js, Prisma, and P
 
 ## Environment Variables
 
-See `.env.example` for all required environment variables. Key variables include:
+### Required Variables
 
-- `DATABASE_URL`: PostgreSQL connection string
-- `NEXTAUTH_SECRET`: Secret for NextAuth (generate with `openssl rand -base64 32`)
-- `NEXTAUTH_URL`: Your application URL
-- `RESEND_API_KEY`: Resend API key for sending emails
-- `SUPABASE_URL` & `SUPABASE_SERVICE_ROLE_KEY`: Supabase credentials for file storage
-- `STRIPE_SECRET_KEY` & `STRIPE_WEBHOOK_SECRET`: Stripe credentials for payments
+#### Database
+- `DATABASE_URL` - PostgreSQL connection string (use connection pooling URL for serverless)
+
+#### Authentication
+- `NEXTAUTH_SECRET` - Secret for NextAuth (generate with `openssl rand -base64 32`)
+- `NEXTAUTH_URL` - Your application URL (e.g., `http://localhost:3000` for dev, `https://your-app.vercel.app` for prod)
+
+#### Email (Resend)
+- `RESEND_API_KEY` - Resend API key for sending emails
+- `MAIL_FROM` (optional) - Default: `FleetHub <noreply@fleethub.com>`
+
+#### Supabase
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key (server-only, keep secret!)
+- `SUPABASE_BUCKET_DRIVER` (optional) - Default: `driver-kyc`
+- `SUPABASE_BUCKET_VEHICLE` (optional) - Default: `vehicle-docs`
+
+#### Stripe
+- `STRIPE_SECRET_KEY` - Stripe secret key
+- `STRIPE_WEBHOOK_SECRET` - Stripe webhook secret
+- `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` - Stripe publishable key
+- `STRIPE_SUCCESS_URL` (optional) - Success redirect URL
+- `STRIPE_CANCEL_URL` (optional) - Cancel redirect URL
+
+#### Admin Seeding (Optional)
+- `ADMIN_EMAIL` - Default: `admin@fleet.com`
+- `ADMIN_PASSWORD` - Default: `changeme123`
+- `ADMIN_NAME` - Default: `Admin User`
+
+See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed environment variable setup instructions.
 
 ## Database Schema
 
@@ -129,6 +154,19 @@ See `prisma/schema.prisma` for the complete schema.
 - **Start production**: `pnpm start`
 
 ## Production Deployment
+
+### Vercel Deployment (Recommended)
+
+See [VERCEL_DEPLOYMENT.md](./VERCEL_DEPLOYMENT.md) for detailed Vercel deployment instructions.
+
+Quick steps:
+1. Push your code to a Git repository
+2. Import project in Vercel
+3. Configure all environment variables in Vercel dashboard
+4. Run database migrations: `pnpm prisma migrate deploy`
+5. Deploy!
+
+### Other Platforms
 
 1. Set all environment variables in your hosting platform
 2. Run database migrations: `pnpm prisma migrate deploy`

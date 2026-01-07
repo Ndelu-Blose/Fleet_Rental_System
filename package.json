@@ -8,6 +8,7 @@
     "dev:legacy": "next dev",
     "lint": "eslint .",
     "start": "next start",
+    "postinstall": "prisma generate",
     "seed": "tsx prisma/seed.ts",
     "test": "vitest",
     "test:watch": "vitest --watch",
