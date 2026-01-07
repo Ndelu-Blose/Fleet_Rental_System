@@ -8,6 +8,7 @@ export const emailConfig = {
   supportEmail: process.env.SUPPORT_EMAIL || "support@fleethub.co.za",
   // Reply-to email (Gmail) - replies go here instead of FROM address
   replyToEmail: process.env.REPLY_TO_EMAIL || process.env.SUPPORT_EMAIL || "cliveuxweb@gmail.com",
-  baseUrl: process.env.NEXTAUTH_URL || "http://localhost:3000",
+  // Support both AUTH_URL (Auth.js v5) and NEXTAUTH_URL (NextAuth v4)
+  baseUrl: process.env.AUTH_URL || process.env.NEXTAUTH_URL || "http://localhost:3000",
 }
 

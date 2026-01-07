@@ -8,7 +8,25 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Loader2, UserPlus, Mail, Phone } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
+import { toast } from "sonner"
+import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye } from "lucide-react"
 
 type Driver = {
   id: string
@@ -38,6 +56,10 @@ export default function AdminDriversPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [creating, setCreating] = useState(false)
   const [activationLink, setActivationLink] = useState("")
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
+  const [driverToDelete, setDriverToDelete] = useState<Driver | null>(null)
+  const [deleting, setDeleting] = useState(false)
+  const [resendingEmail, setResendingEmail] = useState<string | null>(null)
   const [formData, setFormData] = useState({
     email: "",
     name: "",
@@ -85,6 +107,57 @@ export default function AdminDriversPage() {
     }
   }
 
+  const handleDeleteDriver = async () => {
+    if (!driverToDelete) return
+
+    setDeleting(true)
+    try {
+      const res = await fetch(`/api/admin/drivers?driverId=${driverToDelete.id}`, {
+        method: "DELETE",
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        toast.success("Driver deleted successfully")
+        setDeleteDialogOpen(false)
+        setDriverToDelete(null)
+        await fetchDrivers()
+      } else {
+        toast.error(data.error || "Failed to delete driver")
+      }
+    } catch (error) {
+      console.error("Failed to delete driver:", error)
+      toast.error("Failed to delete driver")
+    } finally {
+      setDeleting(false)
+    }
+  }
+
+  const handleResendActivation = async (userId: string) => {
+    setResendingEmail(userId)
+    try {
+      const res = await fetch("/api/admin/drivers/resend-activation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId }),
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        toast.success("Activation email sent successfully")
+      } else {
+        toast.error(data.error || "Failed to send activation email")
+      }
+    } catch (error) {
+      console.error("Failed to resend activation email:", error)
+      toast.error("Failed to send activation email")
+    } finally {
+      setResendingEmail(null)
+    }
+  }
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "VERIFIED":
@@ -124,7 +197,7 @@ export default function AdminDriversPage() {
           <Card key={driver.id}>
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
-                <div className="space-y-1">
+                <div className="flex-1 space-y-1">
                   <h3 className="font-medium">{driver.user.name || "No name"}</h3>
                   <div className="flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
@@ -147,17 +220,59 @@ export default function AdminDriversPage() {
                     <span className="text-xs text-muted-foreground">{driver.completionPercent}% complete</span>
                   </div>
                 </div>
-                <div className="text-right">
-                  {driver.contracts.length > 0 ? (
-                    <div className="text-sm">
-                      <p className="font-medium">
-                        {driver.contracts[0].vehicle.make} {driver.contracts[0].vehicle.model}
-                      </p>
-                      <p className="text-muted-foreground">{driver.contracts[0].vehicle.reg}</p>
-                    </div>
-                  ) : (
-                    <span className="text-sm text-muted-foreground">No vehicle assigned</span>
-                  )}
+                <div className="flex items-center gap-4">
+                  <div className="text-right">
+                    {driver.contracts.length > 0 ? (
+                      <div className="text-sm">
+                        <p className="font-medium">
+                          {driver.contracts[0].vehicle.make} {driver.contracts[0].vehicle.model}
+                        </p>
+                        <p className="text-muted-foreground">{driver.contracts[0].vehicle.reg}</p>
+                      </div>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">No vehicle assigned</span>
+                    )}
+                  </div>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="icon">
+                        <MoreVertical className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem
+                        onClick={() => window.open(`/admin/verification?driverId=${driver.id}`, "_blank")}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View Details
+                      </DropdownMenuItem>
+                      {!driver.user.isEmailVerified && (
+                        <DropdownMenuItem
+                          onClick={() => handleResendActivation(driver.user.id)}
+                          disabled={resendingEmail === driver.user.id}
+                        >
+                          {resendingEmail === driver.user.id ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          ) : (
+                            <MailCheck className="mr-2 h-4 w-4" />
+                          )}
+                          Resend Activation Email
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setDriverToDelete(driver)
+                          setDeleteDialogOpen(true)
+                        }}
+                        className="text-destructive"
+                        disabled={driver.contracts.some((c) => c.status === "ACTIVE")}
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        Delete Driver
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </CardContent>
@@ -239,6 +354,42 @@ export default function AdminDriversPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete the driver account for{" "}
+              <strong>{driverToDelete?.user.name || driverToDelete?.user.email}</strong>. This action cannot be
+              undone.
+              {driverToDelete && driverToDelete.contracts.length > 0 && (
+                <span className="block mt-2 text-destructive">
+                  Warning: This driver has {driverToDelete.contracts.length} contract(s). You should end contracts
+                  first.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleDeleteDriver}
+              disabled={deleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Deleting...
+                </>
+              ) : (
+                "Delete"
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

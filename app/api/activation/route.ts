@@ -4,6 +4,7 @@ import { requireAdmin } from "@/lib/permissions"
 import { sendActivationEmail } from "@/lib/mail"
 import { createDriverSchema } from "@/lib/validations/user"
 import { logger, getRequestContext } from "@/lib/logger"
+import { emailConfig } from "@/lib/email/config"
 import crypto from "crypto"
 
 export async function POST(req: NextRequest) {
@@ -67,7 +68,8 @@ export async function POST(req: NextRequest) {
       // Continue even if email fails - activation link is still returned
     }
     
-    const activationLink = `${process.env.NEXTAUTH_URL}/activate/${activationToken}`
+    // Use emailConfig.baseUrl which supports both AUTH_URL and NEXTAUTH_URL
+    const activationLink = `${emailConfig.baseUrl}/activate/${activationToken}`
     logger.info("Driver activation created", {
       ...getRequestContext(req),
       email,
