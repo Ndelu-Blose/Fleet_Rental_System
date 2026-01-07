@@ -16,9 +16,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const password = credentials?.password
 
         if (!email || !password) {
-          console.error("[Auth] Missing credentials")
+          console.error("[Auth] ❌ Missing credentials", { hasEmail: !!email, hasPassword: !!password })
           return null
         }
+
+        console.log("[Auth] 🔐 Login attempt started", { email })
 
         try {
           // Find user by email - using explicit select to match DB schema
@@ -64,8 +66,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }
 
           // ✅ Check isActive - only block if explicitly false
-          // Allow null/undefined for backward compatibility (existing users might not have this set)
-          // Schema defaults to true, so new users will have true
+          // Allow null/undefined/true for backward compatibility
           if (user.isActive === false) {
             console.error("[Auth] ❌ LOGIN BLOCKED: User account is inactive", {
               email,
@@ -77,12 +78,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
             return null
           }
 
-          // ✅ Check isEmailVerified - only block if explicitly false
-          // Allow null/undefined for backward compatibility (admin users created before email verification)
-          // For DRIVER role, require email verification (must be true, not null)
-          // For ADMIN role, allow null/undefined but block if explicitly false
+          // ✅ Check isEmailVerified - simplified logic
+          // For DRIVER: must be true (block null/undefined/false)
+          // For ADMIN: only block if explicitly false (allow true/null/undefined)
           if (user.role === "DRIVER") {
-            // Drivers must have isEmailVerified === true (not null, not false)
             if (user.isEmailVerified !== true) {
               console.error("[Auth] ❌ LOGIN BLOCKED: Driver email not verified", {
                 email,
@@ -93,26 +92,38 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
               })
               return null
             }
-          } else if (user.role === "ADMIN") {
-            // Admins: only block if explicitly false (allow null/undefined for backward compatibility)
-            if (user.isEmailVerified === false) {
-              console.error("[Auth] ❌ LOGIN BLOCKED: Admin email not verified", {
-                email,
-                userId: user.id,
-                role: user.role,
-                isActive: user.isActive,
-                isEmailVerified: user.isEmailVerified,
-              })
-              return null
-            }
+          }
+          // For ADMIN: only block if explicitly false
+          // Note: Admin with isEmailVerified = true should pass (which is the case in DB)
+          if (user.role === "ADMIN" && user.isEmailVerified === false) {
+            console.error("[Auth] ❌ LOGIN BLOCKED: Admin email not verified", {
+              email,
+              userId: user.id,
+              role: user.role,
+              isActive: user.isActive,
+              isEmailVerified: user.isEmailVerified,
+            })
+            return null
           }
 
           // Verify password - using user.password (matches DB column name)
-          const ok = await bcrypt.compare(password, user.password)
-          if (!ok) {
-            console.error("[Auth] LOGIN BLOCKED: Password mismatch", {
+          let ok = false
+          try {
+            ok = await bcrypt.compare(password, user.password)
+          } catch (bcryptError) {
+            console.error("[Auth] ❌ Password comparison error:", {
               email,
               userId: user.id,
+              error: bcryptError instanceof Error ? bcryptError.message : String(bcryptError),
+            })
+            return null
+          }
+
+          if (!ok) {
+            console.error("[Auth] ❌ LOGIN BLOCKED: Password mismatch", {
+              email,
+              userId: user.id,
+              role: user.role,
               hasPassword: true,
               passwordLength: user.password?.length || 0,
             })
