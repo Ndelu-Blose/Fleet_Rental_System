@@ -4,7 +4,8 @@ import { prisma } from "@/lib/prisma"
 export async function GET() {
   try {
     // Test database connection
-    const userCount = await prisma.user.count()
+    const users = await prisma.user.findMany({ select: { id: true } })
+    const userCount = users.length
     
     return NextResponse.json({
       ok: true,

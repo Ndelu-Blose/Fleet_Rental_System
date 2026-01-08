@@ -159,19 +159,25 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
   });
 
   // ---- CONTRACTS ----
-  const activeContracts = await prisma.rentalContract.count({
-    where: { status: "ACTIVE" },
-  });
+  const activeContracts = (
+    await prisma.rentalContract.findMany({
+      where: { status: "ACTIVE" },
+      select: { id: true },
+    })
+  ).length;
 
   // ---- VEHICLES (Fleet status + utilization) ----
-  const [fleetCounts, assignedVehiclesCount, totalVehiclesCount] = await Promise.all([
+  const [fleetCounts, assignedVehicles, allVehicles] = await Promise.all([
     prisma.vehicle.groupBy({
       by: ["status"],
       _count: { _all: true },
     }),
-    prisma.vehicle.count({ where: { status: "ASSIGNED" } }),
-    prisma.vehicle.count(),
+    prisma.vehicle.findMany({ where: { status: "ASSIGNED" }, select: { id: true } }),
+    prisma.vehicle.findMany({ select: { id: true } }),
   ]);
+  
+  const assignedVehiclesCount = assignedVehicles.length;
+  const totalVehiclesCount = allVehicles.length;
 
   const fleet = {
     total: totalVehiclesCount,
@@ -182,14 +188,20 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
   };
 
   // ---- DRIVER OVERVIEW ----
-  const [totalDrivers, verifiedDrivers, pendingVerification, rejectedDrivers, incompleteProfiles] =
+  const [allDrivers, verifiedDriversList, pendingVerificationList, rejectedDriversList, incompleteProfilesList] =
     await Promise.all([
-      prisma.driverProfile.count(),
-      prisma.driverProfile.count({ where: { verificationStatus: "VERIFIED" } }),
-      prisma.driverProfile.count({ where: { verificationStatus: "IN_REVIEW" } }),
-      prisma.driverProfile.count({ where: { verificationStatus: "REJECTED" } }),
-      prisma.driverProfile.count({ where: { completionPercent: { lt: 100 } } }),
+      prisma.driverProfile.findMany({ select: { id: true } }),
+      prisma.driverProfile.findMany({ where: { verificationStatus: "VERIFIED" }, select: { id: true } }),
+      prisma.driverProfile.findMany({ where: { verificationStatus: "IN_REVIEW" }, select: { id: true } }),
+      prisma.driverProfile.findMany({ where: { verificationStatus: "REJECTED" }, select: { id: true } }),
+      prisma.driverProfile.findMany({ where: { completionPercent: { lt: 100 } }, select: { id: true } }),
     ]);
+  
+  const totalDrivers = allDrivers.length;
+  const verifiedDrivers = verifiedDriversList.length;
+  const pendingVerification = pendingVerificationList.length;
+  const rejectedDrivers = rejectedDriversList.length;
+  const incompleteProfiles = incompleteProfilesList.length;
 
   // ---- EXPIRIES (Action Required) ----
   const soon = new Date();
@@ -242,7 +254,11 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
   });
 
   // ---- DRIVER PERFORMANCE (placeholder until you have real KPIs) ----
-  const activeDrivers = await prisma.rentalContract.count({ where: { status: "ACTIVE" } });
+  const activeDriversList = await prisma.rentalContract.findMany({ 
+    where: { status: "ACTIVE" },
+    select: { id: true },
+  });
+  const activeDrivers = activeDriversList.length;
 
   // ---- PRESERVE EXISTING FEATURES ----
 

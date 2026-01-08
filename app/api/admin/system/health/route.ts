@@ -13,40 +13,56 @@ export async function GET() {
     const dbResponseTime = Date.now() - startTime;
 
     // Get basic counts
-    const [vehicles, drivers, contracts, payments] = await Promise.all([
-      prisma.vehicle.count(),
-      prisma.driverProfile.count(),
-      prisma.rentalContract.count(),
-      prisma.payment.count(),
+    const [vehiclesList, driversList, contractsList, paymentsList] = await Promise.all([
+      prisma.vehicle.findMany({ select: { id: true } }),
+      prisma.driverProfile.findMany({ select: { id: true } }),
+      prisma.rentalContract.findMany({ select: { id: true } }),
+      prisma.payment.findMany({ select: { id: true } }),
     ]);
+
+    const vehicles = vehiclesList.length;
+    const drivers = driversList.length;
+    const contracts = contractsList.length;
+    const payments = paymentsList.length;
 
     // Check for recent activity (last 24 hours)
     const oneDayAgo = new Date();
     oneDayAgo.setDate(oneDayAgo.getDate() - 1);
 
-    const [recentVehicles, recentDrivers, recentPayments] = await Promise.all([
-      prisma.vehicle.count({
+    const [recentVehiclesList, recentDriversList, recentPaymentsList] = await Promise.all([
+      prisma.vehicle.findMany({
         where: { createdAt: { gte: oneDayAgo } },
+        select: { id: true },
       }),
-      prisma.driverProfile.count({
+      prisma.driverProfile.findMany({
         where: { createdAt: { gte: oneDayAgo } },
+        select: { id: true },
       }),
-      prisma.payment.count({
+      prisma.payment.findMany({
         where: { createdAt: { gte: oneDayAgo } },
+        select: { id: true },
       }),
     ]);
 
+    const recentVehicles = recentVehiclesList.length;
+    const recentDrivers = recentDriversList.length;
+    const recentPayments = recentPaymentsList.length;
+
     // Check for issues
-    const overduePayments = await prisma.payment.count({
+    const overduePaymentsList = await prisma.payment.findMany({
       where: {
         status: "PENDING",
         dueDate: { lt: new Date() },
       },
+      select: { id: true },
     });
+    const overduePayments = overduePaymentsList.length;
 
-    const vehiclesNeedingMaintenance = await prisma.vehicle.count({
+    const vehiclesNeedingMaintenanceList = await prisma.vehicle.findMany({
       where: { status: "MAINTENANCE" },
+      select: { id: true },
     });
+    const vehiclesNeedingMaintenance = vehiclesNeedingMaintenanceList.length;
 
     return NextResponse.json({
       status: "healthy",

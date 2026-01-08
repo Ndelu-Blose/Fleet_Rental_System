@@ -21,28 +21,28 @@ export async function GET() {
       overdueRevenue,
     ] = await Promise.all([
       // Vehicle stats
-      prisma.vehicle.count(),
+      prisma.vehicle.findMany({ select: { id: true } }),
       prisma.vehicle.groupBy({
         by: ["status"],
         _count: true,
       }),
 
       // Driver stats
-      prisma.driverProfile.count(),
+      prisma.driverProfile.findMany({ select: { id: true } }),
       prisma.driverProfile.groupBy({
         by: ["verificationStatus"],
         _count: true,
       }),
 
       // Contract stats
-      prisma.rentalContract.count(),
+      prisma.rentalContract.findMany({ select: { id: true } }),
       prisma.rentalContract.groupBy({
         by: ["status"],
         _count: true,
       }),
 
       // Payment stats
-      prisma.payment.count(),
+      prisma.payment.findMany({ select: { id: true } }),
       prisma.payment.groupBy({
         by: ["status"],
         _count: true,
@@ -79,7 +79,7 @@ export async function GET() {
 
     return NextResponse.json({
       vehicles: {
-        total: totalVehicles,
+        total: totalVehicles.length,
         byStatus: Object.fromEntries(
           vehiclesByStatus.map((v) => [v.status, v._count])
         ),
@@ -87,7 +87,7 @@ export async function GET() {
         newestRecord: newestVehicle?.createdAt,
       },
       drivers: {
-        total: totalDrivers,
+        total: totalDrivers.length,
         byVerificationStatus: Object.fromEntries(
           driversByStatus.map((d) => [d.verificationStatus, d._count])
         ),
@@ -95,13 +95,13 @@ export async function GET() {
         newestRecord: newestDriver?.createdAt,
       },
       contracts: {
-        total: totalContracts,
+        total: totalContracts.length,
         byStatus: Object.fromEntries(
           contractsByStatus.map((c) => [c.status, c._count])
         ),
       },
       payments: {
-        total: totalPayments,
+        total: totalPayments.length,
         byStatus: Object.fromEntries(
           paymentsByStatus.map((p) => [p.status, p._count])
         ),
