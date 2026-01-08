@@ -152,11 +152,7 @@ export default function AdminVehiclesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {(showExpiringOnly ? vehicles.filter(hasExpiringCompliance) : vehicles).map((vehicle) => (
-          <Card
-            key={vehicle.id}
-            className="cursor-pointer hover:border-primary transition-colors"
-            onClick={() => router.push(`/admin/vehicles/${vehicle.id}`)}
-          >
+          <Card key={vehicle.id} className="hover:border-primary transition-colors">
             <CardContent className="pt-6">
               <div className="space-y-3">
                 <div className="flex items-start justify-between">
@@ -185,6 +181,31 @@ export default function AdminVehiclesPage() {
                     </p>
                   </div>
                 )}
+
+                <div className="pt-2 border-t flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/admin/vehicles/${vehicle.id}`)
+                    }}
+                  >
+                    View Details
+                  </Button>
+                  <Button
+                    variant={vehicle.contracts.length > 0 ? "secondary" : "default"}
+                    size="sm"
+                    className="flex-1"
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      router.push(`/admin/contracts?vehicleId=${vehicle.id}`)
+                    }}
+                  >
+                    {vehicle.contracts.length > 0 ? "Transfer" : "Assign"}
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -11,7 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { VehicleDocuments } from "@/components/vehicle-documents"
 import { VehicleMaintenance } from "@/components/vehicle-maintenance"
 import { VehicleCosts } from "@/components/vehicle-costs"
-import { Loader2, ArrowLeft, AlertCircle } from "lucide-react"
+import { Loader2, ArrowLeft, AlertCircle, UserPlus, FileText, Edit, MoreVertical, CheckCircle2, XCircle } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 type Vehicle = {
   id: string
@@ -32,12 +33,26 @@ type Vehicle = {
   maintenance: any[]
   costs: any[]
   contracts: Array<{
+    id: string
+    status: string
+    startDate: string
+    endDate: string | null
+    feeAmountCents: number
+    frequency: string
     driver: {
+      id: string
       user: {
         name: string | null
         email: string
       }
     }
+    payments: Array<{
+      id: string
+      amountCents: number
+      dueDate: string
+      status: string
+      paidAt: string | null
+    }>
   }>
 }
 
@@ -129,38 +144,113 @@ export default function VehicleDetailsPage() {
     return <div>Vehicle not found</div>
   }
 
+  const activeContract = vehicle.contracts.find((c) => c.status === "ACTIVE")
+  const nextPayment = activeContract?.payments
+    .filter((p) => p.status === "PENDING")
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0]
+
+  const getStatusBadgeColor = (status: string) => {
+    switch (status) {
+      case "AVAILABLE":
+        return "bg-green-100 text-green-700 border-green-200"
+      case "ASSIGNED":
+        return "bg-blue-100 text-blue-700 border-blue-200"
+      case "MAINTENANCE":
+        return "bg-yellow-100 text-yellow-700 border-yellow-200"
+      case "INACTIVE":
+        return "bg-gray-100 text-gray-700 border-gray-200"
+      default:
+        return "bg-gray-100 text-gray-700 border-gray-200"
+    }
+  }
+
+  const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
-        <Button variant="outline" size="sm" onClick={() => router.push("/admin/vehicles")}>
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <div className="flex-1">
-          <h1 className="text-3xl font-bold">{vehicle.reg}</h1>
-          <p className="text-muted-foreground">
-            {vehicle.make} {vehicle.model}
-            {vehicle.year && ` (${vehicle.year})`}
-          </p>
-        </div>
-        {!editing ? (
-          <Button onClick={() => setEditing(true)}>Edit Details</Button>
-        ) : (
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={() => setEditing(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                "Save Changes"
-              )}
-            </Button>
+      {/* Header */}
+      <div className="flex items-start justify-between">
+        <div className="flex items-start gap-4">
+          <Button variant="outline" size="sm" onClick={() => router.push("/admin/vehicles")}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <div>
+            <div className="flex items-center gap-3">
+              <h1 className="text-3xl font-bold">{vehicle.reg}</h1>
+              <span className={`text-xs font-medium px-2 py-1 rounded border ${getStatusBadgeColor(vehicle.status)}`}>
+                {vehicle.status}
+              </span>
+            </div>
+            <p className="text-muted-foreground mt-1">
+              {vehicle.make} {vehicle.model}
+              {vehicle.year && ` (${vehicle.year})`}
+            </p>
           </div>
-        )}
+        </div>
+
+        {/* Quick Actions */}
+        <div className="flex items-center gap-2">
+          {!editing ? (
+            <>
+              {vehicle.status === "AVAILABLE" && (
+                <Button
+                  variant="default"
+                  size="sm"
+                  onClick={() => router.push(`/admin/contracts?vehicleId=${vehicle.id}`)}
+                >
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Assign Driver
+                </Button>
+              )}
+              {activeContract && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => router.push(`/admin/contracts?vehicleId=${vehicle.id}`)}
+                >
+                  Transfer
+                </Button>
+              )}
+              <Button variant="outline" size="sm" onClick={() => router.push(`/admin/vehicles/${vehicle.id}?tab=documents`)}>
+                <FileText className="h-4 w-4 mr-2" />
+                Upload Docs
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <MoreVertical className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuItem onClick={() => router.push(`/admin/vehicles/${vehicle.id}?tab=maintenance`)}>
+                    Log Maintenance
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="text-red-600">Archive Vehicle</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => setEditing(false)}>
+                Cancel
+              </Button>
+              <Button onClick={handleSave} disabled={saving}>
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Saving...
+                  </>
+                ) : (
+                  "Save Changes"
+                )}
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       <Tabs defaultValue="overview" className="space-y-6">
@@ -172,7 +262,67 @@ export default function VehicleDetailsPage() {
           <TabsTrigger value="costs">Costs</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="overview">
+        <TabsContent value="overview" className="space-y-4">
+          {/* Assigned Driver Card */}
+          {activeContract ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Assigned Driver</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-medium text-lg">
+                      {activeContract.driver.user.name || activeContract.driver.user.email}
+                    </p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Contract started {new Date(activeContract.startDate).toLocaleDateString()}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {formatCurrency(activeContract.feeAmountCents)} {activeContract.frequency.toLowerCase()}
+                    </p>
+                  </div>
+                  <Button variant="outline" onClick={() => router.push(`/admin/contracts?vehicleId=${vehicle.id}`)}>
+                    View Contract
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="border-dashed">
+              <CardContent className="py-6 text-center">
+                <p className="text-muted-foreground mb-2">Not assigned to any driver</p>
+                <Button onClick={() => router.push(`/admin/contracts?vehicleId=${vehicle.id}`)}>
+                  <UserPlus className="h-4 w-4 mr-2" />
+                  Assign Driver
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Next Payment Card */}
+          {nextPayment && (
+            <Card className="border-yellow-200 bg-yellow-50/50">
+              <CardHeader>
+                <CardTitle>Next Payment Due</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-2xl font-bold">{formatCurrency(nextPayment.amountCents)}</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Due: {new Date(nextPayment.dueDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <Button variant="outline" onClick={() => router.push("/admin/payments")}>
+                    View Payments
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Vehicle Information */}
           <Card>
             <CardHeader>
               <CardTitle>Vehicle Information</CardTitle>
@@ -247,6 +397,18 @@ export default function VehicleDetailsPage() {
                       onChange={(e) => setFormData({ ...formData, model: e.target.value })}
                     />
                   </div>
+
+                  {vehicle.notes !== null && (
+                    <div className="space-y-2 col-span-2">
+                      <Label htmlFor="notes">Notes</Label>
+                      <Input
+                        id="notes"
+                        value={formData.notes}
+                        onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                        placeholder="Additional notes..."
+                      />
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -274,15 +436,12 @@ export default function VehicleDetailsPage() {
                     <p className="text-muted-foreground">Model</p>
                     <p className="font-medium">{vehicle.model}</p>
                   </div>
-                </div>
-              )}
-
-              {vehicle.contracts.length > 0 && (
-                <div className="pt-4 border-t">
-                  <p className="text-sm text-muted-foreground mb-1">Currently Assigned To</p>
-                  <p className="font-medium">
-                    {vehicle.contracts[0].driver.user.name || vehicle.contracts[0].driver.user.email}
-                  </p>
+                  {vehicle.notes && (
+                    <div className="col-span-2">
+                      <p className="text-muted-foreground">Notes</p>
+                      <p className="font-medium">{vehicle.notes}</p>
+                    </div>
+                  )}
                 </div>
               )}
             </CardContent>
@@ -291,8 +450,13 @@ export default function VehicleDetailsPage() {
 
         <TabsContent value="compliance">
           <Card>
-            <CardHeader>
+            <CardHeader className="flex flex-row items-center justify-between">
               <CardTitle>Compliance Dates</CardTitle>
+              {!editing && (
+                <Button variant="outline" size="sm" onClick={() => setEditing(true)}>
+                  Update Dates
+                </Button>
+              )}
             </CardHeader>
             <CardContent className="space-y-4">
               {editing ? (
@@ -326,24 +490,41 @@ export default function VehicleDetailsPage() {
                   </div>
                 </div>
               ) : (
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {[
                     { label: "License", date: vehicle.compliance?.licenseExpiry },
                     { label: "Insurance", date: vehicle.compliance?.insuranceExpiry },
                     { label: "Roadworthy", date: vehicle.compliance?.roadworthyExpiry },
                   ].map((item) => {
                     const warning = getExpiryWarning(item.date)
+                    const isExpired = item.date && new Date(item.date) < new Date()
+                    const isExpiringSoon = item.date && !isExpired && warning !== null
+                    const isOk = item.date && !isExpired && !isExpiringSoon
+
                     return (
-                      <div key={item.label} className="flex items-center justify-between p-3 bg-secondary rounded-md">
-                        <div>
-                          <p className="font-medium">{item.label}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {item.date ? new Date(item.date).toLocaleDateString() : "Not set"}
-                          </p>
+                      <div
+                        key={item.label}
+                        className={`flex items-center justify-between p-4 rounded-lg border ${
+                          isExpired
+                            ? "bg-red-50 border-red-200"
+                            : isExpiringSoon
+                              ? "bg-yellow-50 border-yellow-200"
+                              : "bg-secondary"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          {isOk && <CheckCircle2 className="h-5 w-5 text-green-600" />}
+                          {isExpired && <XCircle className="h-5 w-5 text-red-600" />}
+                          {isExpiringSoon && <AlertCircle className="h-5 w-5 text-yellow-600" />}
+                          <div>
+                            <p className="font-medium">{item.label}</p>
+                            <p className="text-sm text-muted-foreground">
+                              {item.date ? new Date(item.date).toLocaleDateString() : "Not set"}
+                            </p>
+                          </div>
                         </div>
                         {warning && (
                           <div className={`flex items-center gap-2 ${warning.color}`}>
-                            <AlertCircle className="h-4 w-4" />
                             <span className="text-sm font-medium">{warning.text}</span>
                           </div>
                         )}

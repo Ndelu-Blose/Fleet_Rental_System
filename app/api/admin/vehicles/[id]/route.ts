@@ -37,6 +37,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 user: true,
               },
             },
+            payments: {
+              orderBy: {
+                dueDate: "asc",
+              },
+            },
           },
         },
       },
