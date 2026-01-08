@@ -73,6 +73,16 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
 
   // Generate proper URL from path
   const publicUrl = getDocumentUrl(document.fileUrl)
+  
+  // Debug logging in development
+  if (process.env.NODE_ENV === "development") {
+    console.log("[AdminDocReview] Document URL generation:", {
+      original: document.fileUrl,
+      generated: publicUrl,
+      hasProtocol: publicUrl.startsWith("http"),
+    })
+  }
+  
   const isImage = publicUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)
   const isPDF = publicUrl.match(/\.pdf$/i)
 
