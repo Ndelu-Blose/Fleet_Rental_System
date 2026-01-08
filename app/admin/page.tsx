@@ -15,7 +15,61 @@ type Props = {
 export default async function AdminDashboardPage({ searchParams }: Props) {
   const sp = await searchParams;
   const range = sp?.range ?? "all";
-  const data = await getAdminDashboardData(range);
+  
+  let data: Awaited<ReturnType<typeof getAdminDashboardData>>;
+  let hasError = false;
+  
+  try {
+    data = await getAdminDashboardData(range);
+  } catch (error) {
+    console.error("[Dashboard] Failed to load:", error);
+    hasError = true;
+    // Return minimal default data structure
+    data = {
+      range,
+      kpis: {
+        totalRevenue: 0,
+        pendingAmount: 0,
+        pendingCount: 0,
+        overdueAmount: 0,
+        overdueCount: 0,
+        oldestOverdueDays: null,
+        activeContracts: 0,
+        vehicleUtilization: { assigned: 0, total: 0 },
+        lastPaymentDate: null,
+      },
+      fleet: {
+        total: 0,
+        available: 0,
+        assigned: 0,
+        maintenance: 0,
+        inactive: 0,
+      },
+      drivers: {
+        total: 0,
+        verified: 0,
+        pendingVerification: 0,
+        rejected: 0,
+        incompleteProfiles: 0,
+      },
+      actionRequired: {
+        overduePayments: 0,
+        pendingVerifications: 0,
+        vehiclesExpiringSoon: 0,
+      },
+      recentPayments: [],
+      driverPerformance: {
+        activeDrivers: 0,
+        message: "No active drivers yet",
+      },
+      vehicleCosts: [],
+      driverPerformanceDetails: [],
+      alerts: {
+        compliance: [],
+        maintenance: [],
+      },
+    };
+  }
 
   const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`;
 
@@ -28,6 +82,29 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <p className="text-muted-foreground mt-1">Overview of your fleet operations</p>
       </div>
+
+      {hasError && (
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-medium text-red-900">Dashboard Data Unavailable</h3>
+                <p className="text-sm text-red-700 mt-1">
+                  Some dashboard data could not be loaded. Please refresh the page or contact support if the issue persists.
+                </p>
+              </div>
+              <form action={async () => {
+                "use server"
+                revalidatePath("/admin")
+              }}>
+                <Button type="submit" variant="outline">
+                  Retry
+                </Button>
+              </form>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <SetupChecklist />
 

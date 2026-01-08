@@ -3,6 +3,16 @@ import { prisma } from "@/lib/prisma";
 
 export type DashboardRange = "all" | "month" | "week";
 
+// Timeout wrapper to prevent hanging queries
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Query timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
+
 export type AdminDashboardData = {
   range: DashboardRange;
 
@@ -118,287 +128,456 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
   const start = rangeStart(range);
   const now = new Date();
 
-  // ---- PAYMENTS ----
-  const paymentsWhere = start ? { createdAt: { gte: start } } : {};
+  // ---- PAYMENTS SECTION (with error handling) ----
+  let allPayments: any[] = [];
+  let totalRevenue = 0;
+  let pendingAmount = 0;
+  let pendingCount = 0;
+  let overdueAmount = 0;
+  let overdueCount = 0;
+  let oldestOverdueDays: number | null = null;
+  let lastPaymentDate: string | null = null;
 
-  // Get all payments for the range
-  const allPayments = await prisma.payment.findMany({
-    where: paymentsWhere,
-  });
+  try {
+    const paymentsWhere = start ? { createdAt: { gte: start } } : {};
 
-  // Calculate paid payments (status === "PAID")
-  const paidPayments = allPayments.filter((p) => p.status === "PAID");
-  const totalRevenue = paidPayments.reduce((sum, p) => sum + p.amountCents, 0) / 100;
+    // Parallelize payment queries
+    const [payments, lastPayment] = await Promise.all([
+      withTimeout(
+        prisma.payment.findMany({
+          where: paymentsWhere,
+        }),
+        5000
+      ).catch(() => []),
+      withTimeout(
+        prisma.payment.findFirst({
+          where: { status: "PAID" },
+          orderBy: { paidAt: "desc" },
+          select: { paidAt: true },
+        }),
+        3000
+      ).catch(() => null),
+    ]);
 
-  // Calculate pending payments (status === "PENDING")
-  const pendingPayments = allPayments.filter((p) => p.status === "PENDING");
-  const pendingAmount = pendingPayments.reduce((sum, p) => sum + p.amountCents, 0) / 100;
-  const pendingCount = pendingPayments.length;
+    allPayments = payments;
 
-  // Calculate overdue payments (status === "OVERDUE" OR status === "PENDING" with dueDate < now)
-  const overduePayments = allPayments.filter(
-    (p) => p.status === "OVERDUE" || (p.status === "PENDING" && new Date(p.dueDate) < now)
-  );
-  const overdueAmount = overduePayments.reduce((sum, p) => sum + p.amountCents, 0) / 100;
-  const overdueCount = overduePayments.length;
+    // Calculate paid payments (status === "PAID")
+    const paidPayments = allPayments.filter((p) => p.status === "PAID");
+    totalRevenue = paidPayments.reduce((sum, p) => sum + p.amountCents, 0) / 100;
 
-  // Find oldest overdue payment
-  const oldestOverdue = overduePayments
-    .filter((p) => p.dueDate)
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
+    // Calculate pending payments (status === "PENDING")
+    const pendingPayments = allPayments.filter((p) => p.status === "PENDING");
+    pendingAmount = pendingPayments.reduce((sum, p) => sum + p.amountCents, 0) / 100;
+    pendingCount = pendingPayments.length;
 
-  const oldestOverdueDays = oldestOverdue?.dueDate
-    ? Math.max(0, Math.floor((Date.now() - new Date(oldestOverdue.dueDate).getTime()) / (1000 * 60 * 60 * 24)))
-    : null;
+    // Calculate overdue payments (status === "OVERDUE" OR status === "PENDING" with dueDate < now)
+    const overduePayments = allPayments.filter(
+      (p) => p.status === "OVERDUE" || (p.status === "PENDING" && new Date(p.dueDate) < now)
+    );
+    overdueAmount = overduePayments.reduce((sum, p) => sum + p.amountCents, 0) / 100;
+    overdueCount = overduePayments.length;
 
-  // Get last payment date
-  const lastPayment = await prisma.payment.findFirst({
-    where: { status: "PAID" },
-    orderBy: { paidAt: "desc" },
-    select: { paidAt: true },
-  });
+    // Find oldest overdue payment
+    const oldestOverdue = overduePayments
+      .filter((p) => p.dueDate)
+      .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0];
 
-  // ---- CONTRACTS ----
-  const activeContracts = (
-    await prisma.rentalContract.findMany({
-      where: { status: "ACTIVE" },
-      select: { id: true },
-    })
-  ).length;
+    oldestOverdueDays = oldestOverdue?.dueDate
+      ? Math.max(0, Math.floor((Date.now() - new Date(oldestOverdue.dueDate).getTime()) / (1000 * 60 * 60 * 24)))
+      : null;
 
-  // ---- VEHICLES (Fleet status + utilization) ----
-  const [fleetCounts, assignedVehicles, allVehicles] = await Promise.all([
-    prisma.vehicle.groupBy({
-      by: ["status"],
-      _count: { _all: true },
-    }),
-    prisma.vehicle.findMany({ where: { status: "ASSIGNED" }, select: { id: true } }),
-    prisma.vehicle.findMany({ select: { id: true } }),
-  ]);
-  
-  const assignedVehiclesCount = assignedVehicles.length;
-  const totalVehiclesCount = allVehicles.length;
+    lastPaymentDate = lastPayment?.paidAt ? new Date(lastPayment.paidAt).toISOString() : null;
+  } catch (error) {
+    console.error("[Dashboard] Payments section failed:", error);
+    // Use defaults, continue
+  }
 
-  const fleet = {
-    total: totalVehiclesCount,
-    available: fleetCounts.find((x) => x.status === "AVAILABLE")?._count._all ?? 0,
-    assigned: fleetCounts.find((x) => x.status === "ASSIGNED")?._count._all ?? 0,
-    maintenance: fleetCounts.find((x) => x.status === "MAINTENANCE")?._count._all ?? 0,
-    inactive: fleetCounts.find((x) => x.status === "INACTIVE")?._count._all ?? 0,
+  // ---- CONTRACTS SECTION (with error handling) ----
+  let activeContracts = 0;
+  try {
+    const activeContractsList = await withTimeout(
+      prisma.rentalContract.findMany({
+        where: { status: "ACTIVE" },
+        select: { id: true },
+      }),
+      3000
+    ).catch(() => []);
+    activeContracts = activeContractsList.length;
+  } catch (error) {
+    console.error("[Dashboard] Contracts section failed:", error);
+    // Use default (0)
+  }
+
+  // ---- VEHICLES SECTION (with error handling) ----
+  let fleet = {
+    total: 0,
+    available: 0,
+    assigned: 0,
+    maintenance: 0,
+    inactive: 0,
+  };
+  let assignedVehiclesCount = 0;
+  let totalVehiclesCount = 0;
+
+  try {
+    // Parallelize contracts and vehicle queries
+    const [fleetCounts, assignedVehicles, allVehicles] = await Promise.all([
+      withTimeout(
+        prisma.vehicle.groupBy({
+          by: ["status"],
+          _count: { _all: true },
+        }),
+        5000
+      ).catch(() => []),
+      withTimeout(
+        prisma.vehicle.findMany({ where: { status: "ASSIGNED" }, select: { id: true } }),
+        3000
+      ).catch(() => []),
+      withTimeout(
+        prisma.vehicle.findMany({ select: { id: true } }),
+        3000
+      ).catch(() => []),
+    ]);
+
+    assignedVehiclesCount = assignedVehicles.length;
+    totalVehiclesCount = allVehicles.length;
+
+    fleet = {
+      total: totalVehiclesCount,
+      available: fleetCounts.find((x) => x.status === "AVAILABLE")?._count._all ?? 0,
+      assigned: fleetCounts.find((x) => x.status === "ASSIGNED")?._count._all ?? 0,
+      maintenance: fleetCounts.find((x) => x.status === "MAINTENANCE")?._count._all ?? 0,
+      inactive: fleetCounts.find((x) => x.status === "INACTIVE")?._count._all ?? 0,
+    };
+  } catch (error) {
+    console.error("[Dashboard] Vehicles section failed:", error);
+    // Use defaults
+  }
+
+  // ---- DRIVERS SECTION (with error handling) ----
+  let drivers = {
+    total: 0,
+    verified: 0,
+    pendingVerification: 0,
+    rejected: 0,
+    incompleteProfiles: 0,
   };
 
-  // ---- DRIVER OVERVIEW ----
-  const [allDrivers, verifiedDriversList, pendingVerificationList, rejectedDriversList, incompleteProfilesList] =
-    await Promise.all([
-      prisma.driverProfile.findMany({ select: { id: true } }),
-      prisma.driverProfile.findMany({ where: { verificationStatus: "VERIFIED" }, select: { id: true } }),
-      prisma.driverProfile.findMany({ where: { verificationStatus: "IN_REVIEW" }, select: { id: true } }),
-      prisma.driverProfile.findMany({ where: { verificationStatus: "REJECTED" }, select: { id: true } }),
-      prisma.driverProfile.findMany({ where: { completionPercent: { lt: 100 } }, select: { id: true } }),
-    ]);
-  
-  const totalDrivers = allDrivers.length;
-  const verifiedDrivers = verifiedDriversList.length;
-  const pendingVerification = pendingVerificationList.length;
-  const rejectedDrivers = rejectedDriversList.length;
-  const incompleteProfiles = incompleteProfilesList.length;
+  try {
+    const [allDrivers, verifiedDriversList, pendingVerificationList, rejectedDriversList, incompleteProfilesList] =
+      await Promise.all([
+        withTimeout(prisma.driverProfile.findMany({ select: { id: true } }), 3000).catch(() => []),
+        withTimeout(
+          prisma.driverProfile.findMany({ where: { verificationStatus: "VERIFIED" }, select: { id: true } }),
+          3000
+        ).catch(() => []),
+        withTimeout(
+          prisma.driverProfile.findMany({ where: { verificationStatus: "IN_REVIEW" }, select: { id: true } }),
+          3000
+        ).catch(() => []),
+        withTimeout(
+          prisma.driverProfile.findMany({ where: { verificationStatus: "REJECTED" }, select: { id: true } }),
+          3000
+        ).catch(() => []),
+        withTimeout(
+          prisma.driverProfile.findMany({ where: { completionPercent: { lt: 100 } }, select: { id: true } }),
+          3000
+        ).catch(() => []),
+      ]);
 
-  // ---- EXPIRIES (Action Required) ----
-  const soon = new Date();
-  soon.setDate(soon.getDate() + 14); // 14-day window
+    drivers = {
+      total: allDrivers.length,
+      verified: verifiedDriversList.length,
+      pendingVerification: pendingVerificationList.length,
+      rejected: rejectedDriversList.length,
+      incompleteProfiles: incompleteProfilesList.length,
+    };
+  } catch (error) {
+    console.error("[Dashboard] Drivers section failed:", error);
+    // Use defaults
+  }
 
-  const vehiclesWithCompliance = await prisma.vehicle.findMany({
-    where: {
-      compliance: { isNot: null },
-    },
-    include: {
-      compliance: true,
-    },
-  });
+  // ---- COMPLIANCE & RECENT PAYMENTS (with error handling) ----
+  let vehiclesExpiringSoon = 0;
+  let recentPayments: any[] = [];
+  let complianceAlerts: Array<{
+    vehicleId: string;
+    vehicleReg: string;
+    type: string;
+    expiryDate: string;
+    daysUntil: number;
+  }> = [];
 
-  const vehiclesExpiringSoon = vehiclesWithCompliance.filter((v) => {
-    if (!v.compliance) return false;
-    const expiries = [
-      v.compliance.licenseExpiry,
-      v.compliance.insuranceExpiry,
-      v.compliance.roadworthyExpiry,
-    ].filter((e): e is Date => e !== null);
-    return expiries.some((expiry) => expiry <= soon);
-  }).length;
+  try {
+    const soon = new Date();
+    soon.setDate(soon.getDate() + 14); // 14-day window
 
-  // ---- RECENT PAYMENTS LIST ----
-  const recentPayments = await prisma.payment.findMany({
-    orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
-    take: 5,
-    select: {
-      id: true,
-      amountCents: true,
-      status: true,
-      dueDate: true,
-      paidAt: true,
-      contract: {
-        select: {
-          driver: {
-            select: {
-              user: {
-                select: { name: true, email: true },
+    // Parallelize compliance and recent payments
+    const [vehiclesWithCompliance, recentPaymentsData] = await Promise.all([
+      withTimeout(
+        prisma.vehicle.findMany({
+          where: {
+            compliance: { isNot: null },
+          },
+          include: {
+            compliance: true,
+          },
+        }),
+        5000
+      ).catch(() => []),
+      withTimeout(
+        prisma.payment.findMany({
+          orderBy: [{ paidAt: "desc" }, { createdAt: "desc" }],
+          take: 5,
+          select: {
+            id: true,
+            amountCents: true,
+            status: true,
+            dueDate: true,
+            paidAt: true,
+            contract: {
+              select: {
+                driver: {
+                  select: {
+                    user: {
+                      select: { name: true, email: true },
+                    },
+                  },
+                },
+                vehicle: {
+                  select: { reg: true, make: true, model: true },
+                },
               },
             },
           },
-          vehicle: {
-            select: { reg: true, make: true, model: true },
-          },
-        },
-      },
-    },
-  });
+        }),
+        5000
+      ).catch(() => []),
+    ]);
 
-  // ---- DRIVER PERFORMANCE (placeholder until you have real KPIs) ----
-  const activeDriversList = await prisma.rentalContract.findMany({ 
-    where: { status: "ACTIVE" },
-    select: { id: true },
-  });
-  const activeDrivers = activeDriversList.length;
-
-  // ---- PRESERVE EXISTING FEATURES ----
-
-  // Vehicle Costs (Last 6 months)
-  const sixMonthsAgo = new Date(now.getFullYear(), now.getMonth() - 6, 1);
-  const vehicleCostsData = await prisma.vehicleCost.findMany({
-    where: {
-      occurredAt: {
-        gte: sixMonthsAgo,
-      },
-    },
-    include: {
-      vehicle: true,
-    },
-  });
-
-  const costsByVehicle = vehicleCostsData.reduce(
-    (acc, cost) => {
-      const key = cost.vehicleId;
-      if (!acc[key]) {
-        acc[key] = {
-          vehicleId: cost.vehicleId,
-          vehicleReg: cost.vehicle.reg,
-          totalCostCents: 0,
-        };
-      }
-      acc[key].totalCostCents += cost.amountCents;
-      return acc;
-    },
-    {} as Record<string, { vehicleId: string; vehicleReg: string; totalCostCents: number }>,
-  );
-
-  const topCostVehicles = Object.values(costsByVehicle)
-    .sort((a, b) => b.totalCostCents - a.totalCostCents)
-    .slice(0, 5);
-
-  // Driver Performance Details
-  const driverPerformanceData = await prisma.driverProfile.findMany({
-    where: {
-      contracts: {
-        some: {
-          status: "ACTIVE",
-        },
-      },
-    },
-    include: {
-      user: true,
-      contracts: {
-        where: {
-          status: "ACTIVE",
-        },
-        include: {
-          payments: true,
-        },
-      },
-    },
-  });
-
-  const driverStats = driverPerformanceData.map((driver) => {
-    const allPayments = driver.contracts.flatMap((c) => c.payments);
-    const totalPayments = allPayments.length;
-    const paidOnTime = allPayments.filter((p) => {
-      if (p.status !== "PAID" || !p.paidAt) return false;
-      return new Date(p.paidAt) <= new Date(p.dueDate);
+    vehiclesExpiringSoon = vehiclesWithCompliance.filter((v) => {
+      if (!v.compliance) return false;
+      const expiries = [
+        v.compliance.licenseExpiry,
+        v.compliance.insuranceExpiry,
+        v.compliance.roadworthyExpiry,
+      ].filter((e): e is Date => e !== null);
+      return expiries.some((expiry) => expiry <= soon);
     }).length;
 
-    return {
-      driverId: driver.id,
-      driverName: driver.user.name || driver.user.email,
-      totalPayments,
-      paidOnTime,
-      onTimeRate: totalPayments > 0 ? Math.round((paidOnTime / totalPayments) * 100) : 0,
+    recentPayments = recentPaymentsData;
+
+    // Compliance Alerts
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+    complianceAlerts = vehiclesWithCompliance.flatMap((v) => {
+      if (!v.compliance) return [];
+      const alerts = [];
+
+      if (v.compliance.licenseExpiry) {
+        const expiry = new Date(v.compliance.licenseExpiry);
+        if (expiry <= thirtyDaysFromNow) {
+          alerts.push({
+            vehicleId: v.id,
+            vehicleReg: v.reg,
+            type: "LICENSE",
+            expiryDate: v.compliance.licenseExpiry.toISOString(),
+            daysUntil: Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+          });
+        }
+      }
+
+      if (v.compliance.insuranceExpiry) {
+        const expiry = new Date(v.compliance.insuranceExpiry);
+        if (expiry <= thirtyDaysFromNow) {
+          alerts.push({
+            vehicleId: v.id,
+            vehicleReg: v.reg,
+            type: "INSURANCE",
+            expiryDate: v.compliance.insuranceExpiry.toISOString(),
+            daysUntil: Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+          });
+        }
+      }
+
+      if (v.compliance.roadworthyExpiry) {
+        const expiry = new Date(v.compliance.roadworthyExpiry);
+        if (expiry <= thirtyDaysFromNow) {
+          alerts.push({
+            vehicleId: v.id,
+            vehicleReg: v.reg,
+            type: "ROADWORTHY",
+            expiryDate: v.compliance.roadworthyExpiry.toISOString(),
+            daysUntil: Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+          });
+        }
+      }
+
+      return alerts;
+    });
+  } catch (error) {
+    console.error("[Dashboard] Compliance/Recent payments section failed:", error);
+    // Use defaults
+  }
+
+  // ---- DRIVER PERFORMANCE & VEHICLE COSTS (with error handling) ----
+  let activeDrivers = 0;
+  let driverStats: Array<{
+    driverId: string;
+    driverName: string;
+    totalPayments: number;
+    paidOnTime: number;
+    onTimeRate: number;
+  }> = [];
+  let topCostVehicles: Array<{
+    vehicleId: string;
+    vehicleReg: string;
+    totalCostCents: number;
+  }> = [];
+  let upcomingMaintenance: Array<{
+    id: string;
+    title: string;
+    scheduledAt: string;
+    vehicle: {
+      reg: string;
     };
-  });
+  }> = [];
 
-  // Compliance Alerts
-  const thirtyDaysFromNow = new Date();
-  thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+  try {
+    const [activeDriversList, vehicleCostsData, driverPerformanceData, maintenanceData] = await Promise.all([
+      withTimeout(
+        prisma.rentalContract.findMany({
+          where: { status: "ACTIVE" },
+          select: { id: true },
+        }),
+        3000
+      ).catch(() => []),
+      withTimeout(
+        prisma.vehicleCost.findMany({
+          where: {
+            occurredAt: {
+              gte: new Date(now.getFullYear(), now.getMonth() - 6, 1),
+            },
+          },
+          include: {
+            vehicle: {
+              select: { reg: true },
+            },
+          },
+        }),
+        5000
+      ).catch(() => []),
+      withTimeout(
+        prisma.driverProfile.findMany({
+          where: {
+            contracts: {
+              some: {
+                status: "ACTIVE",
+              },
+            },
+          },
+          select: {
+            id: true,
+            user: {
+              select: { name: true, email: true },
+            },
+            contracts: {
+              where: {
+                status: "ACTIVE",
+              },
+              select: {
+                payments: {
+                  select: {
+                    status: true,
+                    paidAt: true,
+                    dueDate: true,
+                  },
+                },
+              },
+            },
+          },
+        }),
+        5000
+      ).catch(() => []),
+      withTimeout(
+        prisma.vehicleMaintenance.findMany({
+          where: {
+            status: "PLANNED",
+            scheduledAt: {
+              lte: new Date(now.getTime() + 30 * 24 * 60 * 60 * 1000),
+            },
+          },
+          select: {
+            id: true,
+            title: true,
+            scheduledAt: true,
+            vehicle: {
+              select: { reg: true },
+            },
+          },
+          orderBy: {
+            scheduledAt: "asc",
+          },
+        }),
+        5000
+      ).catch(() => []),
+    ]);
 
-  const complianceAlerts = vehiclesWithCompliance.flatMap((v) => {
-    if (!v.compliance) return [];
-    const alerts = [];
+    activeDrivers = activeDriversList.length;
 
-    if (v.compliance.licenseExpiry) {
-      const expiry = new Date(v.compliance.licenseExpiry);
-      if (expiry <= thirtyDaysFromNow) {
-        alerts.push({
-          vehicleId: v.id,
-          vehicleReg: v.reg,
-          type: "LICENSE",
-          expiryDate: v.compliance.licenseExpiry.toISOString(),
-          daysUntil: Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
-        });
-      }
-    }
-
-    if (v.compliance.insuranceExpiry) {
-      const expiry = new Date(v.compliance.insuranceExpiry);
-      if (expiry <= thirtyDaysFromNow) {
-        alerts.push({
-          vehicleId: v.id,
-          vehicleReg: v.reg,
-          type: "INSURANCE",
-          expiryDate: v.compliance.insuranceExpiry.toISOString(),
-          daysUntil: Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
-        });
-      }
-    }
-
-    if (v.compliance.roadworthyExpiry) {
-      const expiry = new Date(v.compliance.roadworthyExpiry);
-      if (expiry <= thirtyDaysFromNow) {
-        alerts.push({
-          vehicleId: v.id,
-          vehicleReg: v.reg,
-          type: "ROADWORTHY",
-          expiryDate: v.compliance.roadworthyExpiry.toISOString(),
-          daysUntil: Math.floor((expiry.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
-        });
-      }
-    }
-
-    return alerts;
-  });
-
-  // Maintenance Alerts
-  const upcomingMaintenance = await prisma.vehicleMaintenance.findMany({
-    where: {
-      status: "PLANNED",
-      scheduledAt: {
-        lte: thirtyDaysFromNow,
+    // Process vehicle costs
+    const costsByVehicle = vehicleCostsData.reduce(
+      (acc, cost) => {
+        const key = cost.vehicleId;
+        if (!acc[key]) {
+          acc[key] = {
+            vehicleId: cost.vehicleId,
+            vehicleReg: cost.vehicle.reg,
+            totalCostCents: 0,
+          };
+        }
+        acc[key].totalCostCents += cost.amountCents;
+        return acc;
       },
-    },
-    include: {
-      vehicle: true,
-    },
-    orderBy: {
-      scheduledAt: "asc",
-    },
-  });
+      {} as Record<string, { vehicleId: string; vehicleReg: string; totalCostCents: number }>,
+    );
+
+    topCostVehicles = Object.values(costsByVehicle)
+      .sort((a, b) => b.totalCostCents - a.totalCostCents)
+      .slice(0, 5);
+
+    // Process driver performance
+    driverStats = driverPerformanceData.map((driver) => {
+      const allPayments = driver.contracts.flatMap((c) => c.payments);
+      const totalPayments = allPayments.length;
+      const paidOnTime = allPayments.filter((p) => {
+        if (p.status !== "PAID" || !p.paidAt) return false;
+        return new Date(p.paidAt) <= new Date(p.dueDate);
+      }).length;
+
+      return {
+        driverId: driver.id,
+        driverName: driver.user.name || driver.user.email,
+        totalPayments,
+        paidOnTime,
+        onTimeRate: totalPayments > 0 ? Math.round((paidOnTime / totalPayments) * 100) : 0,
+      };
+    });
+
+    // Process maintenance alerts
+    upcomingMaintenance = maintenanceData.map((m) => ({
+      id: m.id,
+      title: m.title,
+      scheduledAt: m.scheduledAt?.toISOString() || new Date().toISOString(),
+      vehicle: {
+        reg: m.vehicle.reg,
+      },
+    }));
+  } catch (error) {
+    console.error("[Dashboard] Driver performance/Vehicle costs section failed:", error);
+    // Use defaults
+  }
 
   return {
     range,
@@ -411,19 +590,13 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
       oldestOverdueDays,
       activeContracts,
       vehicleUtilization: { assigned: assignedVehiclesCount, total: totalVehiclesCount },
-      lastPaymentDate: lastPayment?.paidAt ? new Date(lastPayment.paidAt).toISOString() : null,
+      lastPaymentDate,
     },
     fleet,
-    drivers: {
-      total: totalDrivers,
-      verified: verifiedDrivers,
-      pendingVerification,
-      rejected: rejectedDrivers,
-      incompleteProfiles,
-    },
+    drivers,
     actionRequired: {
       overduePayments: overdueCount,
-      pendingVerifications: pendingVerification,
+      pendingVerifications: drivers.pendingVerification,
       vehiclesExpiringSoon,
     },
     recentPayments: recentPayments.map((p) => ({
@@ -447,14 +620,7 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
     driverPerformanceDetails: driverStats,
     alerts: {
       compliance: complianceAlerts,
-      maintenance: upcomingMaintenance.map((m) => ({
-        id: m.id,
-        title: m.title,
-        scheduledAt: m.scheduledAt?.toISOString() || new Date().toISOString(),
-        vehicle: {
-          reg: m.vehicle.reg,
-        },
-      })),
+      maintenance: upcomingMaintenance,
     },
   };
 }

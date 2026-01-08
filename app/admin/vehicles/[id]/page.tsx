@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { VehicleDocuments } from "@/components/vehicle-documents"
 import { VehicleMaintenance } from "@/components/vehicle-maintenance"
 import { VehicleCosts } from "@/components/vehicle-costs"
+import { VehicleSetupChecklist } from "@/components/admin/VehicleSetupChecklist"
 import { Loader2, ArrowLeft, AlertCircle, UserPlus, FileText, Edit, MoreVertical, CheckCircle2, XCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 

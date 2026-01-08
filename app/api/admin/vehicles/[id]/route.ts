@@ -13,6 +13,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       include: {
         compliance: true,
         documents: {
+          select: { type: true }, // Only need type for checklist
           orderBy: {
             createdAt: "desc",
           },
@@ -33,7 +34,15 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               in: ["DRAFT", "SENT", "SENT_TO_DRIVER", "SIGNED_BY_DRIVER", "DRIVER_SIGNED", "ACTIVE"],
             },
           },
-          include: {
+          orderBy: {
+            createdAt: "desc",
+          },
+          select: {
+            id: true,
+            status: true,
+            driverSignedAt: true,
+            signedPdfPath: true,
+            createdAt: true,
             driver: {
               include: {
                 user: true,
@@ -45,9 +54,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
               },
             },
           },
-          orderBy: {
-            createdAt: "desc",
-          },
+          take: 3, // Only need latest contracts for checklist
         },
       },
     })
