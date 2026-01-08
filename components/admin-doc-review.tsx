@@ -15,6 +15,8 @@ interface Document {
   type: string
   fileName: string | null
   fileUrl: string
+  bucket?: string | null
+  path?: string | null
   status: string
   reviewNote: string | null
   createdAt: string
@@ -47,9 +49,13 @@ function formatDate(dateString: string): string {
 }
 
 async function getSignedUrl(bucket: string, path: string): Promise<string> {
-  const res = await fetch(`/api/files/signed-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}&expiresIn=300`)
+  const res = await fetch("/api/files/signed-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ bucket, path, expiresIn: 300 }),
+  })
   const data = await res.json()
-  if (!data.url) {
+  if (!data.ok || !data.url) {
     throw new Error(data.error || "Failed to get signed URL")
   }
   return data.url
@@ -106,10 +112,15 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
     }
   }
 
-  // Parse bucket and path from fileUrl
-  const parsed = parseSupabasePath(document.fileUrl)
-  const bucket = parsed?.bucket || "driver-kyc"
-  const path = parsed?.path || document.fileUrl
+  // Use bucket+path from document if available, otherwise parse from fileUrl
+  const bucket = document.bucket || (() => {
+    const parsed = parseSupabasePath(document.fileUrl)
+    return parsed?.bucket || "driver-kyc"
+  })()
+  const path = document.path || (() => {
+    const parsed = parseSupabasePath(document.fileUrl)
+    return parsed?.path || document.fileUrl
+  })()
 
   // Determine file type from path
   const isImage = path.match(/\.(jpg|jpeg|png|gif|webp)$/i)

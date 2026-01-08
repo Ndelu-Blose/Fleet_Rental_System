@@ -57,15 +57,21 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Profile not found" }, { status: 404 })
     }
 
-    // Upload to Supabase
-    const fileUrl = await uploadDriverDocument(file, profile.id, docType)
+    // Upload to Supabase (returns path, not full URL)
+    const path = await uploadDriverDocument(file, profile.id, docType)
+    const bucket = process.env.SUPABASE_BUCKET_DRIVER || "driver-kyc"
+    
+    // For backward compatibility, construct a fileUrl (but prefer bucket+path)
+    const fileUrl = path // Store path as fileUrl for now
 
     // Create document record
     await prisma.driverDocument.create({
       data: {
         driverId: profile.id,
         type: docType as any,
-        fileUrl,
+        fileUrl, // Keep for backward compatibility
+        bucket,  // Store bucket
+        path,    // Store path
         fileName: file.name,
         mimeType: file.type,
         sizeBytes: file.size,

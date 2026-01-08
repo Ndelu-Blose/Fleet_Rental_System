@@ -4,7 +4,9 @@ import { supabaseAdmin } from "@/lib/supabase/server"
 import { env } from "@/lib/env"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(req: NextRequest) {
+export const runtime = "nodejs"
+
+export async function POST(req: NextRequest) {
   try {
     // Try to get admin session first, fallback to driver
     let session
@@ -16,19 +18,18 @@ export async function GET(req: NextRequest) {
       session = await requireDriver()
     }
 
-    const { searchParams } = new URL(req.url)
-    const bucket = searchParams.get("bucket")
-    const path = searchParams.get("path")
-    const expiresIn = parseInt(searchParams.get("expiresIn") || "60") // Default 60 seconds
+    const body = await req.json()
+    const { bucket, path } = body
+    const expiresIn = body.expiresIn || 300 // Default 5 minutes
 
     if (!bucket || !path) {
-      return NextResponse.json({ error: "Missing bucket or path" }, { status: 400 })
+      return NextResponse.json({ ok: false, error: "Missing bucket or path" }, { status: 400 })
     }
 
     // Validate bucket is one of our allowed buckets
-    const allowedBuckets = [env.supabase.bucketDriver, env.supabase.bucketVehicle]
+    const allowedBuckets = [env.supabase.bucketDriver, env.supabase.bucketVehicle, "contract-assets"]
     if (!allowedBuckets.includes(bucket)) {
-      return NextResponse.json({ error: "Invalid bucket" }, { status: 400 })
+      return NextResponse.json({ ok: false, error: "Invalid bucket" }, { status: 400 })
     }
 
     // Security: If driver is accessing driver-kyc bucket, verify they own the document
@@ -44,21 +45,21 @@ export async function GET(req: NextRequest) {
       })
 
       if (!profile || profile.userId !== session.user.id) {
-        return NextResponse.json({ error: "Unauthorized: You can only access your own documents" }, { status: 403 })
+        return NextResponse.json({ ok: false, error: "Unauthorized: You can only access your own documents" }, { status: 403 })
       }
     }
 
-    // Generate signed URL (expires in specified seconds, default 60)
+    // Generate signed URL (expires in specified seconds, default 5 minutes)
     const { data, error } = await supabaseAdmin.storage.from(bucket).createSignedUrl(path, expiresIn)
 
     if (error) {
       console.error("[Signed URL] Error:", error)
-      return NextResponse.json({ error: error.message || "Failed to generate signed URL" }, { status: 500 })
+      return NextResponse.json({ ok: false, error: error.message || "Failed to generate signed URL" }, { status: 500 })
     }
 
-    return NextResponse.json({ url: data.signedUrl })
+    return NextResponse.json({ ok: true, url: data.signedUrl })
   } catch (error) {
     console.error("[Signed URL] Unexpected error:", error)
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    return NextResponse.json({ ok: false, error: "Unauthorized" }, { status: 401 })
   }
 }

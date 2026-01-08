@@ -46,11 +46,12 @@ export async function POST(
 
     const buffer = dataUrlToBuffer(signatureDataUrl)
 
-    const filePath = `contracts/${contract.id}/driver-signature.png`
-    const bucket = env.supabase.bucketDriver
+    // Use contract-assets bucket for signatures
+    const bucket = "contract-assets"
+    const path = `signatures/${contract.id}.png`
 
     // Upload signature image
-    const { error: upErr } = await supabaseAdmin.storage.from(bucket).upload(filePath, buffer, {
+    const { error: upErr } = await supabaseAdmin.storage.from(bucket).upload(path, buffer, {
       contentType: "image/png",
       upsert: true,
     })
@@ -60,10 +61,6 @@ export async function POST(
       return NextResponse.json({ error: upErr.message }, { status: 500 })
     }
 
-    // Get public URL (or use signed URL if bucket is private)
-    const { data: pub } = supabaseAdmin.storage.from(bucket).getPublicUrl(filePath)
-    const signatureUrl = pub.publicUrl
-
     // Hash terms for audit trail
     const termsText = contract.termsText ?? ""
     const termsHash = crypto.createHash("sha256").update(termsText).digest("hex")
@@ -72,7 +69,9 @@ export async function POST(
       where: { id: contract.id },
       data: {
         driverSignedAt: new Date(),
-        driverSignatureUrl: signatureUrl,
+        driverSignatureBucket: bucket,
+        driverSignaturePath: path,
+        driverSignatureUrl: path, // Keep for backward compatibility
         termsHash,
         status: "SIGNED_BY_DRIVER",
         lockedAt: contract.lockedAt ?? new Date(),

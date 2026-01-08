@@ -2,19 +2,13 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
 import { Loader2, FileText, CheckCircle2, AlertCircle, Download } from "lucide-react"
 import { toast } from "sonner"
-
-// Dynamic import to prevent SSR issues with react-signature-canvas
-const SignaturePad = dynamic(
-  () => import("@/components/driver/SignaturePad").then((m) => m.SignaturePad),
-  { ssr: false }
-)
+import { SignaturePad } from "@/components/driver/SignaturePad"
 
 type Contract = {
   id: string
@@ -67,8 +61,19 @@ export default function DriverContractPage() {
     }
   }
 
-  const handleSign = async (signatureDataUrl: string) => {
+  const [signatureDataUrl, setSignatureDataUrl] = useState<string | null>(null)
+
+  const handleSignatureChange = (dataUrl: string | null) => {
+    setSignatureDataUrl(dataUrl)
+  }
+
+  const handleSign = async () => {
     if (!contract) return
+
+    if (!signatureDataUrl) {
+      toast.error("Please provide your signature")
+      return
+    }
 
     if (!acceptance.agreeTerms || !acceptance.agreePayments) {
       toast.error("Please accept all terms before signing")
@@ -91,6 +96,7 @@ export default function DriverContractPage() {
       if (res.ok) {
         toast.success("Contract signed successfully!")
         await fetchContract()
+        setSignatureDataUrl(null)
       } else {
         toast.error(data.error || "Failed to sign contract")
       }
@@ -279,8 +285,16 @@ export default function DriverContractPage() {
           <CardHeader>
             <CardTitle>Signature</CardTitle>
           </CardHeader>
-          <CardContent>
-            <SignaturePad onSigned={handleSign} />
+          <CardContent className="space-y-4">
+            <SignaturePad onChange={handleSignatureChange} />
+            <Button
+              type="button"
+              onClick={handleSign}
+              disabled={signing || !signatureDataUrl || !acceptance.agreeTerms || !acceptance.agreePayments}
+              className="w-full"
+            >
+              {signing ? "Signing..." : "Sign Contract"}
+            </Button>
           </CardContent>
         </Card>
       </div>

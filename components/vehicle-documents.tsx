@@ -19,6 +19,8 @@ interface VehicleDocument {
   title: string | null
   fileName: string | null
   fileUrl: string
+  bucket?: string | null
+  path?: string | null
   issuedAt: string | null
   expiresAt: string | null
   createdAt: string
@@ -43,14 +45,23 @@ export function VehicleDocuments({ vehicleId, documents, onRefresh }: VehicleDoc
 
   const handleViewDocument = async (doc: VehicleDocument) => {
     try {
-      const parsed = parseSupabasePath(doc.fileUrl)
-      const bucket = parsed?.bucket || "vehicle-docs"
-      const path = parsed?.path || doc.fileUrl
+      const bucket = doc.bucket || (() => {
+        const parsed = parseSupabasePath(doc.fileUrl)
+        return parsed?.bucket || "vehicle-docs"
+      })()
+      const path = doc.path || (() => {
+        const parsed = parseSupabasePath(doc.fileUrl)
+        return parsed?.path || doc.fileUrl
+      })()
       
-      const res = await fetch(`/api/files/signed-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}&expiresIn=300`)
+      const res = await fetch("/api/files/signed-url", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ bucket, path, expiresIn: 300 }),
+      })
       const data = await res.json()
       
-      if (!data.url) {
+      if (!data.ok || !data.url) {
         throw new Error(data.error || "Failed to get signed URL")
       }
       

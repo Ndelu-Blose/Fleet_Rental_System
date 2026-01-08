@@ -26,14 +26,20 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
       return NextResponse.json({ error: validation.error }, { status: 400 })
     }
 
-    const fileUrl = await uploadVehicleDocument(file, id, type)
+    const path = await uploadVehicleDocument(file, id, type)
+    const bucket = process.env.SUPABASE_BUCKET_VEHICLE || "vehicle-docs"
+    
+    // For backward compatibility, construct a fileUrl (but prefer bucket+path)
+    const fileUrl = path // Store path as fileUrl for now
 
     const document = await prisma.vehicleDocument.create({
       data: {
         vehicleId: id,
         type: type as any,
         title,
-        fileUrl,
+        fileUrl, // Keep for backward compatibility
+        bucket,  // Store bucket
+        path,    // Store path
         fileName: file.name,
         mimeType: file.type,
         sizeBytes: file.size,
