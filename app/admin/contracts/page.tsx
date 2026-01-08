@@ -10,7 +10,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Loader2, Plus, Calendar, DollarSign } from "lucide-react"
+import { Loader2, Plus, Calendar, DollarSign, FileText, Download } from "lucide-react"
+import { toast } from "sonner"
 
 type Contract = {
   id: string
@@ -19,6 +20,8 @@ type Contract = {
   startDate: string
   endDate: string | null
   status: string
+  driverSignedAt: string | null
+  signedPdfUrl: string | null
   driver: {
     user: {
       name: string | null
@@ -246,11 +249,48 @@ export default function AdminContractsPage() {
                   </div>
                 </div>
 
-                {contract.status === "ACTIVE" && (
-                  <Button variant="outline" size="sm" onClick={() => handleEndContract(contract.id)}>
-                    End Contract
-                  </Button>
-                )}
+                <div className="flex gap-2">
+                  {contract.status === "DRIVER_SIGNED" && !contract.signedPdfUrl && (
+                    <Button
+                      variant="default"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const res = await fetch(`/api/contracts/${contract.id}/generate-signed-pdf`, {
+                            method: "POST",
+                          })
+                          const data = await res.json()
+                          if (res.ok) {
+                            toast.success("Signed PDF generated successfully!")
+                            await fetchContracts()
+                          } else {
+                            toast.error(data.error || "Failed to generate PDF")
+                          }
+                        } catch (error) {
+                          toast.error("Failed to generate PDF")
+                        }
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" />
+                      Generate PDF
+                    </Button>
+                  )}
+                  {contract.signedPdfUrl && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
+                    >
+                      <Download className="h-4 w-4 mr-2" />
+                      Download PDF
+                    </Button>
+                  )}
+                  {contract.status === "ACTIVE" && (
+                    <Button variant="outline" size="sm" onClick={() => handleEndContract(contract.id)}>
+                      End Contract
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -59,10 +59,12 @@ type Vehicle = {
 export default function VehicleDetailsPage() {
   const params = useParams()
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [vehicle, setVehicle] = useState<Vehicle | null>(null)
   const [loading, setLoading] = useState(true)
   const [editing, setEditing] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [activeTab, setActiveTab] = useState("overview")
   const [formData, setFormData] = useState({
     type: "",
     reg: "",
@@ -79,6 +81,14 @@ export default function VehicleDetailsPage() {
   useEffect(() => {
     fetchVehicle()
   }, [params.id])
+
+  // Handle tab from URL params
+  useEffect(() => {
+    const tab = searchParams.get("tab")
+    if (tab && ["overview", "compliance", "documents", "maintenance", "costs"].includes(tab)) {
+      setActiveTab(tab)
+    }
+  }, [searchParams])
 
   const fetchVehicle = async () => {
     try {
@@ -226,7 +236,12 @@ export default function VehicleDetailsPage() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => router.push(`/admin/vehicles/${vehicle.id}?tab=maintenance`)}>
+                  <DropdownMenuItem
+                    onClick={() => {
+                      setActiveTab("maintenance")
+                      router.push(`/admin/vehicles/${vehicle.id}?tab=maintenance&action=add`)
+                    }}
+                  >
                     Log Maintenance
                   </DropdownMenuItem>
                   <DropdownMenuItem className="text-red-600">Archive Vehicle</DropdownMenuItem>
@@ -253,7 +268,7 @@ export default function VehicleDetailsPage() {
         </div>
       </div>
 
-      <Tabs defaultValue="overview" className="space-y-6">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         <TabsList>
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
@@ -548,7 +563,12 @@ export default function VehicleDetailsPage() {
         <TabsContent value="maintenance">
           <Card>
             <CardContent className="pt-6">
-              <VehicleMaintenance vehicleId={vehicle.id} maintenance={vehicle.maintenance} onRefresh={fetchVehicle} />
+              <VehicleMaintenance 
+                vehicleId={vehicle.id} 
+                maintenance={vehicle.maintenance} 
+                onRefresh={fetchVehicle}
+                autoOpen={searchParams.get("action") === "add"}
+              />
             </CardContent>
           </Card>
         </TabsContent>

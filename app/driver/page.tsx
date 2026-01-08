@@ -18,9 +18,12 @@ import {
 
 type Contract = {
   id: string
+  status: string
   feeAmountCents: number
   frequency: string
   startDate: string
+  driverSignedAt: string | null
+  signedPdfUrl: string | null
   vehicle: {
     reg: string
     make: string
@@ -117,12 +120,37 @@ export default function DriverDashboardPage() {
     )
   }
 
+  // Check if contract needs signing
+  const needsSigning = contract && contract.status === "SENT_TO_DRIVER"
+
   return (
     <div className="space-y-6">
       <div>
         <h1 className="text-3xl font-bold">Driver Dashboard</h1>
         <p className="text-muted-foreground mt-1">Welcome back</p>
       </div>
+
+      {/* Alert: Contract needs signing */}
+      {needsSigning && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5" />
+                <div>
+                  <h3 className="font-medium text-yellow-900">Contract Pending Signature</h3>
+                  <p className="text-sm text-yellow-700 mt-1">
+                    You have a contract waiting for your signature. Please review and sign to activate your rental.
+                  </p>
+                </div>
+              </div>
+              <Button onClick={() => router.push("/driver/contract")}>
+                Sign Contract
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Three Main Cards */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -206,8 +234,8 @@ export default function DriverDashboardPage() {
                       {formatCurrency(contract.feeAmountCents)} {contract.frequency.toLowerCase()}
                     </span>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => router.push("/driver/payments")} className="w-full">
-                    View Contract Details
+                  <Button variant="outline" size="sm" onClick={() => router.push("/driver/contract")} className="w-full">
+                    {contract.status === "SENT_TO_DRIVER" ? "Sign Contract" : "View Contract"}
                   </Button>
                 </div>
               ) : (

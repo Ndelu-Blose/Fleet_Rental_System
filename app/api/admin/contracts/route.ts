@@ -145,7 +145,25 @@ export async function POST(req: NextRequest) {
           dueWeekday: finalDueWeekday,
           dueDayOfMonth: finalDueDayOfMonth,
           startDate,
-          status: "ACTIVE",
+          status: "SENT_TO_DRIVER", // Start as sent to driver for signing
+          sentToDriverAt: new Date(),
+          termsText: `Vehicle Rental Agreement
+
+This agreement is between FleetHub and the driver for the rental of vehicle ${vehicle.reg}.
+
+Terms:
+- Rental rate: R ${(amount / 100).toFixed(2)} ${freq.toLowerCase()}
+- Payment frequency: ${freq}
+- Start date: ${new Date(startDate).toLocaleDateString()}
+- Vehicle: ${vehicle.make} ${vehicle.model}${vehicle.year ? ` ${vehicle.year}` : ""}
+
+By signing this contract, you agree to:
+1. Pay the rental fee on time as specified
+2. Maintain the vehicle in good condition
+3. Report any issues immediately
+4. Return the vehicle in the same condition (normal wear excepted)
+
+Failure to comply may result in contract termination.`,
         },
         include: {
           driver: {
@@ -157,21 +175,14 @@ export async function POST(req: NextRequest) {
         },
       })
 
-      // Update vehicle status
+      // Update vehicle status to ASSIGNED (but contract is still SENT_TO_DRIVER until signed)
       await tx.vehicle.update({
         where: { id: vehicleId },
         data: { status: "ASSIGNED" },
       })
 
-      // Generate first payment using the generator service
-      await createFirstPayment(tx, {
-        contractId: created.id,
-        amountCents: amount,
-        startDate,
-        frequency: freq,
-        dueWeekday: finalDueWeekday,
-        dueDayOfMonth: finalDueDayOfMonth,
-      })
+      // Don't create payments yet - wait until contract is signed and becomes ACTIVE
+      // Payments will be generated when admin generates the signed PDF
 
       return created
     })

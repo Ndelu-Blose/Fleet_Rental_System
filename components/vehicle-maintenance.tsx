@@ -2,7 +2,8 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams, usePathname } from "next/navigation"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -28,12 +29,34 @@ interface VehicleMaintenanceProps {
   vehicleId: string
   maintenance: MaintenanceTask[]
   onRefresh: () => void
+  autoOpen?: boolean
 }
 
-export function VehicleMaintenance({ vehicleId, maintenance, onRefresh }: VehicleMaintenanceProps) {
-  const [showDialog, setShowDialog] = useState(false)
+export function VehicleMaintenance({ vehicleId, maintenance, onRefresh, autoOpen = false }: VehicleMaintenanceProps) {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  const [showDialog, setShowDialog] = useState(autoOpen)
   const [editingTask, setEditingTask] = useState<MaintenanceTask | null>(null)
   const [saving, setSaving] = useState(false)
+
+  // Auto-open dialog if action=add is in URL
+  useEffect(() => {
+    if (searchParams.get("action") === "add") {
+      setShowDialog(true)
+    }
+  }, [searchParams])
+
+  // Clear URL param when dialog closes
+  const handleDialogChange = (open: boolean) => {
+    setShowDialog(open)
+    if (!open && searchParams.get("action") === "add") {
+      const params = new URLSearchParams(searchParams.toString())
+      params.delete("action")
+      const newUrl = params.toString() ? `${pathname}?${params.toString()}` : pathname
+      router.replace(newUrl, { scroll: false })
+    }
+  }
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -60,7 +83,7 @@ export function VehicleMaintenance({ vehicleId, maintenance, onRefresh }: Vehicl
       })
 
       if (res.ok) {
-        setShowDialog(false)
+        handleDialogChange(false)
         setFormData({ title: "", description: "", scheduledAt: "", odometerKm: "", estimatedCostCents: "" })
         onRefresh()
       }
@@ -194,7 +217,7 @@ export function VehicleMaintenance({ vehicleId, maintenance, onRefresh }: Vehicl
         )}
       </div>
 
-      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+      <Dialog open={showDialog} onOpenChange={handleDialogChange}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Schedule Maintenance</DialogTitle>

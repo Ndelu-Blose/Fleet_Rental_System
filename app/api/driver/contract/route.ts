@@ -17,7 +17,9 @@ export async function GET(req: NextRequest) {
     const contract = await prisma.rentalContract.findFirst({
       where: {
         driverId: profile.id,
-        status: "ACTIVE",
+        status: {
+          in: ["SENT_TO_DRIVER", "DRIVER_SIGNED", "ACTIVE"],
+        },
       },
       include: {
         vehicle: {
@@ -30,6 +32,9 @@ export async function GET(req: NextRequest) {
             dueDate: "asc",
           },
         },
+      },
+      orderBy: {
+        createdAt: "desc",
       },
     })
 

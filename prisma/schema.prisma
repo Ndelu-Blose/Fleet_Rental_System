@@ -25,9 +25,14 @@ enum VehicleStatus {
 }
 
 enum ContractStatus {
+  DRAFT
+  SENT_TO_DRIVER
+  DRIVER_SIGNED
   ACTIVE
   PAUSED
   ENDED
+  CANCELLED
+  EXPIRED
 }
 
 enum FeeFrequency {
@@ -306,7 +311,24 @@ model RentalContract {
   dueDayOfMonth  Int? // 1-28 for monthly contracts
   startDate      DateTime
   endDate        DateTime?
-  status         ContractStatus @default(ACTIVE)
+  status         ContractStatus @default(DRAFT)
+
+  // Contract signing fields
+  termsVersion      String   @default("v1")
+  termsHash         String?  // sha256 of the terms content at signing time
+  termsText         String?  // Store the contract terms text
+
+  sentToDriverAt    DateTime?
+  driverSignedAt    DateTime?
+  adminSignedAt     DateTime?
+
+  driverSignatureUrl String? // stored image in Supabase
+  adminSignatureUrl  String? // optional
+
+  signedPdfUrl      String?  // stored final PDF in Supabase
+  signedPdfGeneratedAt DateTime?
+
+  lockedAt          DateTime? // set once sent or once signed
 
   payments Payment[]
 
@@ -315,6 +337,7 @@ model RentalContract {
 
   @@index([driverId])
   @@index([vehicleId])
+  @@index([status])
 }
 
 model Payment {
