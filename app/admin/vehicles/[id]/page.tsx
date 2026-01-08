@@ -283,6 +283,33 @@ export default function VehicleDetailsPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
+          {/* Setup Checklist */}
+          {vehicle && (
+            <VehicleSetupChecklist
+              vehicle={{
+                id: vehicle.id,
+                reg: vehicle.reg,
+                type: vehicle.type,
+                status: vehicle.status,
+                documents: (vehicle.documents || []).map((d: any) => ({ type: d.type })),
+                compliance: vehicle.compliance
+                  ? {
+                      licenseExpiry: vehicle.compliance.licenseExpiry,
+                      insuranceExpiry: vehicle.compliance.insuranceExpiry,
+                      roadworthyExpiry: vehicle.compliance.roadworthyExpiry,
+                    }
+                  : null,
+                contracts: (vehicle.contracts || []).map((c: any) => ({
+                  id: c.id,
+                  status: c.status,
+                  driverSignedAt: c.driverSignedAt,
+                  signedPdfPath: c.signedPdfPath,
+                  createdAt: c.createdAt,
+                })),
+              }}
+            />
+          )}
+
           {/* Assigned Driver Card */}
           {activeContract ? (
             <Card>
