@@ -125,6 +125,10 @@ function rangeStart(range: DashboardRange): Date | null {
  * - DriverProfile: verificationStatus (IN_REVIEW for pending), completionPercent, user relation
  */
 export async function getAdminDashboardData(range: DashboardRange): Promise<AdminDashboardData> {
+  // #region agent log
+  console.log("[DEBUG] getAdminDashboardData entry", { range, timestamp: Date.now() });
+  fetch('http://127.0.0.1:7243/ingest/fdfd108c-8382-4a11-b6ab-18addac549f6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/dashboard/adminDashboard.ts:127',message:'getAdminDashboardData entry',data:{range},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   const start = rangeStart(range);
   const now = new Date();
 
@@ -140,6 +144,10 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
 
   try {
     const paymentsWhere = start ? { createdAt: { gte: start } } : {};
+    // #region agent log
+    const paymentsStart = Date.now();
+    fetch('http://127.0.0.1:7243/ingest/fdfd108c-8382-4a11-b6ab-18addac549f6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/dashboard/adminDashboard.ts:144',message:'Payments section query start',data:{hasStart:!!start},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
 
     // Parallelize payment queries
     const [payments, lastPayment] = await Promise.all([
@@ -187,7 +195,13 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
       : null;
 
     lastPaymentDate = lastPayment?.paidAt ? new Date(lastPayment.paidAt).toISOString() : null;
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/fdfd108c-8382-4a11-b6ab-18addac549f6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/dashboard/adminDashboard.ts:192',message:'Payments section completed',data:{duration:Date.now()-paymentsStart,count:allPayments.length},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
   } catch (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/fdfd108c-8382-4a11-b6ab-18addac549f6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/dashboard/adminDashboard.ts:195',message:'Payments section error',data:{errorName:error instanceof Error?error.name:'unknown',errorMessage:error instanceof Error?error.message:String(error),duration:Date.now()-paymentsStart},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})}).catch(()=>{});
+    // #endregion
     console.error("[Dashboard] Payments section failed:", error);
     // Use defaults, continue
   }
@@ -579,6 +593,9 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
     // Use defaults
   }
 
+  // #region agent log
+  fetch('http://127.0.0.1:7243/ingest/fdfd108c-8382-4a11-b6ab-18addac549f6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'lib/dashboard/adminDashboard.ts:585',message:'getAdminDashboardData success exit',data:{range},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   return {
     range,
     kpis: {

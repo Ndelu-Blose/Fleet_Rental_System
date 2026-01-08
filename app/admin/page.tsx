@@ -32,10 +32,20 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
   let hasError = false;
   let errorMessage: string | null = null;
   
+  // #region agent log
+  const pageStart = Date.now();
+  fetch('http://127.0.0.1:7243/ingest/fdfd108c-8382-4a11-b6ab-18addac549f6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/page.tsx:35',message:'Dashboard page data fetch start',data:{range},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+  // #endregion
   try {
     // Hard timeout: 8 seconds max for dashboard data
     data = await withTimeout(getAdminDashboardData(range), 8000);
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/fdfd108c-8382-4a11-b6ab-18addac549f6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/page.tsx:38',message:'Dashboard page data fetch success',data:{duration:Date.now()-pageStart},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
   } catch (error) {
+    // #region agent log
+    fetch('http://127.0.0.1:7243/ingest/fdfd108c-8382-4a11-b6ab-18addac549f6',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'app/admin/page.tsx:41',message:'Dashboard page data fetch error',data:{errorName:error instanceof Error?error.name:'unknown',errorMessage:error instanceof Error?error.message:String(error),duration:Date.now()-pageStart},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})}).catch(()=>{});
+    // #endregion
     console.error("[Dashboard] Failed to load:", error);
     hasError = true;
     errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
