@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { DocumentUploader } from "@/components/document-uploader"
 import { Loader2, FileText, CheckCircle2, XCircle, Clock, Download, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
-import { getDocumentUrl } from "@/lib/supabase/utils"
+import { parseSupabasePath } from "@/lib/supabase/utils"
 
 type Document = {
   id: string
@@ -40,6 +40,27 @@ export default function DriverDocumentsPage() {
       toast.error("Failed to fetch documents")
     } finally {
       setLoading(false)
+    }
+  }
+
+  const getSignedUrl = async (bucket: string, path: string): Promise<string> => {
+    const res = await fetch(`/api/files/signed-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}&expiresIn=300`)
+    const data = await res.json()
+    if (!data.url) {
+      throw new Error(data.error || "Failed to get signed URL")
+    }
+    return data.url
+  }
+
+  const handleViewDocument = async (doc: Document) => {
+    try {
+      const parsed = parseSupabasePath(doc.fileUrl)
+      const bucket = parsed?.bucket || "driver-kyc"
+      const path = parsed?.path || doc.fileUrl
+      const signedUrl = await getSignedUrl(bucket, path)
+      window.open(signedUrl, "_blank", "noopener,noreferrer")
+    } catch (error: any) {
+      toast.error(error.message || "Failed to open document")
     }
   }
 
@@ -208,7 +229,7 @@ export default function DriverDocumentsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(getDocumentUrl(doc.fileUrl), "_blank")}
+                      onClick={() => handleViewDocument(doc)}
                     >
                       <Download className="h-4 w-4 mr-2" />
                       View

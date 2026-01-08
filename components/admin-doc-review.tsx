@@ -1,13 +1,14 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { CheckCircle2, XCircle, FileText, Loader2, Download, Eye } from "lucide-react"
 import Image from "next/image"
-import { getDocumentUrl } from "@/lib/supabase/utils"
+import { parseSupabasePath } from "@/lib/supabase/utils"
+import { toast } from "sonner"
 
 interface Document {
   id: string
@@ -45,19 +46,53 @@ function formatDate(dateString: string): string {
   })
 }
 
-function downloadFile(url: string, fileName: string | null) {
-  const link = document.createElement("a")
-  link.href = url
-  link.download = fileName || "document"
-  link.target = "_blank"
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
+async function getSignedUrl(bucket: string, path: string): Promise<string> {
+  const res = await fetch(`/api/files/signed-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}&expiresIn=300`)
+  const data = await res.json()
+  if (!data.url) {
+    throw new Error(data.error || "Failed to get signed URL")
+  }
+  return data.url
+}
+
+async function downloadFile(bucket: string, path: string, fileName: string | null) {
+  try {
+    const signedUrl = await getSignedUrl(bucket, path)
+    const fileRes = await fetch(signedUrl)
+    if (!fileRes.ok) {
+      throw new Error(`Failed to fetch file: ${fileRes.statusText}`)
+    }
+    const blob = await fileRes.blob()
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = fileName || "document"
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  } catch (error: any) {
+    console.error("Download failed:", error)
+    toast.error(error.message || "Failed to download document")
+    throw error
+  }
+}
+
+async function openDocument(bucket: string, path: string) {
+  try {
+    const signedUrl = await getSignedUrl(bucket, path)
+    window.open(signedUrl, "_blank", "noopener,noreferrer")
+  } catch (error: any) {
+    console.error("Open document failed:", error)
+    toast.error(error.message || "Failed to open document")
+  }
 }
 
 export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
   const [reviewing, setReviewing] = useState(false)
   const [note, setNote] = useState("")
+  const [loadingUrl, setLoadingUrl] = useState(false)
+  const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(null)
 
   const handleReview = async (status: "APPROVED" | "REJECTED") => {
     setReviewing(true)
@@ -71,20 +106,38 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
     }
   }
 
-  // Generate proper URL from path
-  const publicUrl = getDocumentUrl(document.fileUrl)
-  
-  // Debug logging in development
-  if (process.env.NODE_ENV === "development") {
-    console.log("[AdminDocReview] Document URL generation:", {
-      original: document.fileUrl,
-      generated: publicUrl,
-      hasProtocol: publicUrl.startsWith("http"),
-    })
+  // Parse bucket and path from fileUrl
+  const parsed = parseSupabasePath(document.fileUrl)
+  const bucket = parsed?.bucket || "driver-kyc"
+  const path = parsed?.path || document.fileUrl
+
+  // Determine file type from path
+  const isImage = path.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+  const isPDF = path.match(/\.pdf$/i)
+
+  // Load thumbnail for images (using signed URL)
+  const loadThumbnail = async () => {
+    if (!isImage || thumbnailUrl) return
+    
+    setLoadingUrl(true)
+    try {
+      const signedUrl = await getSignedUrl(bucket, path)
+      setThumbnailUrl(signedUrl)
+    } catch (error: any) {
+      console.error("Failed to load thumbnail:", error)
+      // Don't show toast for thumbnail failures, just log
+    } finally {
+      setLoadingUrl(false)
+    }
   }
-  
-  const isImage = publicUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-  const isPDF = publicUrl.match(/\.pdf$/i)
+
+  // Load thumbnail on mount for images
+  useEffect(() => {
+    if (isImage) {
+      loadThumbnail()
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isImage])
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -106,14 +159,24 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
           <div className="flex-shrink-0">
             {isImage ? (
               <div className="relative w-24 h-24 rounded-lg border overflow-hidden bg-secondary/30">
-                <Image
-                  src={publicUrl}
-                  alt={getDocumentLabel(document.type)}
-                  width={96}
-                  height={96}
-                  className="object-cover w-full h-full cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => window.open(publicUrl, "_blank")}
-                />
+                {loadingUrl ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : thumbnailUrl ? (
+                  <Image
+                    src={thumbnailUrl}
+                    alt={getDocumentLabel(document.type)}
+                    width={96}
+                    height={96}
+                    className="object-cover w-full h-full cursor-pointer hover:opacity-80 transition-opacity"
+                    onClick={() => openDocument(bucket, path)}
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <FileText className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
               </div>
             ) : (
               <div className="w-24 h-24 rounded-lg border flex items-center justify-center bg-secondary/30">
@@ -150,19 +213,29 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open(publicUrl, "_blank")}
+                onClick={() => openDocument(bucket, path)}
+                disabled={loadingUrl}
                 className="flex items-center gap-1"
               >
-                <Eye className="h-3 w-3" />
+                {loadingUrl ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Eye className="h-3 w-3" />
+                )}
                 View
               </Button>
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => downloadFile(publicUrl, document.fileName)}
+                onClick={() => downloadFile(bucket, path, document.fileName)}
+                disabled={loadingUrl}
                 className="flex items-center gap-1"
               >
-                <Download className="h-3 w-3" />
+                {loadingUrl ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <Download className="h-3 w-3" />
+                )}
                 Download
               </Button>
             </div>

@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { FileText, Upload, Loader2, Calendar } from "lucide-react"
-import { getVehicleDocumentUrl } from "@/lib/supabase/utils"
+import { parseSupabasePath } from "@/lib/supabase/utils"
+import { env } from "@/lib/env"
 
 interface VehicleDocument {
   id: string
@@ -39,6 +40,26 @@ export function VehicleDocuments({ vehicleId, documents, onRefresh }: VehicleDoc
     issuedAt: "",
     expiresAt: "",
   })
+
+  const handleViewDocument = async (doc: VehicleDocument) => {
+    try {
+      const parsed = parseSupabasePath(doc.fileUrl)
+      const bucket = parsed?.bucket || "vehicle-docs"
+      const path = parsed?.path || doc.fileUrl
+      
+      const res = await fetch(`/api/files/signed-url?bucket=${encodeURIComponent(bucket)}&path=${encodeURIComponent(path)}&expiresIn=300`)
+      const data = await res.json()
+      
+      if (!data.url) {
+        throw new Error(data.error || "Failed to get signed URL")
+      }
+      
+      window.open(data.url, "_blank", "noopener,noreferrer")
+    } catch (error: any) {
+      console.error("Failed to open document:", error)
+      alert(error.message || "Failed to open document")
+    }
+  }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0]
@@ -132,11 +153,9 @@ export function VehicleDocuments({ vehicleId, documents, onRefresh }: VehicleDoc
                   </div>
                 </div>
               </div>
-              <a href={getVehicleDocumentUrl(doc.fileUrl)} target="_blank" rel="noopener noreferrer">
-                <Button variant="outline" size="sm">
-                  View
-                </Button>
-              </a>
+              <Button variant="outline" size="sm" onClick={() => handleViewDocument(doc)}>
+                View
+              </Button>
             </div>
           </Card>
         ))}
