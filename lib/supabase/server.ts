@@ -8,6 +8,7 @@ export const supabaseAdmin = createClient(
 )
 
 // Re-export upload functions for backward compatibility
+// Returns the path (not full URL) - URLs should be generated at runtime
 export async function uploadDriverDocument(file: File, driverProfileId: string, docType: string): Promise<string> {
   const fileName = `${driverProfileId}/${docType}-${Date.now()}-${file.name}`
 
@@ -15,9 +16,9 @@ export async function uploadDriverDocument(file: File, driverProfileId: string, 
 
   if (error) throw error
 
-  const { data: urlData } = supabaseAdmin.storage.from(env.supabase.bucketDriver).getPublicUrl(data.path)
-
-  return urlData.publicUrl
+  // Return path only, not full URL
+  // Components will generate URLs at runtime using getDocumentUrl()
+  return data.path
 }
 
 export async function uploadVehicleDocument(file: File, vehicleId: string, docType: string): Promise<string> {
@@ -27,9 +28,9 @@ export async function uploadVehicleDocument(file: File, vehicleId: string, docTy
 
   if (error) throw error
 
-  const { data: urlData } = supabaseAdmin.storage.from(env.supabase.bucketVehicle).getPublicUrl(data.path)
-
-  return urlData.publicUrl
+  // Return path only, not full URL
+  // Components will generate URLs at runtime using getDocumentUrl()
+  return data.path
 }
 
 

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { DocumentUploader } from "@/components/document-uploader"
 import { Loader2, FileText, CheckCircle2, XCircle, Clock, Download, AlertCircle } from "lucide-react"
 import { toast } from "sonner"
+import { getDocumentUrl } from "@/lib/supabase/utils"
 
 type Document = {
   id: string
@@ -207,7 +208,7 @@ export default function DriverDocumentsPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => window.open(doc.fileUrl, "_blank")}
+                      onClick={() => window.open(getDocumentUrl(doc.fileUrl), "_blank")}
                     >
                       <Download className="h-4 w-4 mr-2" />
                       View

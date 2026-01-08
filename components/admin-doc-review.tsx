@@ -7,6 +7,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { CheckCircle2, XCircle, FileText, Loader2, Download, Eye } from "lucide-react"
 import Image from "next/image"
+import { getDocumentUrl } from "@/lib/supabase/utils"
 
 interface Document {
   id: string
@@ -70,8 +71,10 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
     }
   }
 
-  const isImage = document.fileUrl && document.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)
-  const isPDF = document.fileUrl && document.fileUrl.match(/\.pdf$/i)
+  // Generate proper URL from path
+  const publicUrl = getDocumentUrl(document.fileUrl)
+  const isImage = publicUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+  const isPDF = publicUrl.match(/\.pdf$/i)
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -94,12 +97,12 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
             {isImage ? (
               <div className="relative w-24 h-24 rounded-lg border overflow-hidden bg-secondary/30">
                 <Image
-                  src={document.fileUrl}
+                  src={publicUrl}
                   alt={getDocumentLabel(document.type)}
                   width={96}
                   height={96}
                   className="object-cover w-full h-full cursor-pointer hover:opacity-80 transition-opacity"
-                  onClick={() => window.open(document.fileUrl, "_blank")}
+                  onClick={() => window.open(publicUrl, "_blank")}
                 />
               </div>
             ) : (
@@ -137,7 +140,7 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => window.open(document.fileUrl, "_blank")}
+                onClick={() => window.open(publicUrl, "_blank")}
                 className="flex items-center gap-1"
               >
                 <Eye className="h-3 w-3" />
@@ -146,7 +149,7 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
               <Button
                 variant="outline"
                 size="sm"
-                onClick={() => downloadFile(document.fileUrl, document.fileName)}
+                onClick={() => downloadFile(publicUrl, document.fileName)}
                 className="flex items-center gap-1"
               >
                 <Download className="h-3 w-3" />

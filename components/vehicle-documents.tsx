@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { FileText, Upload, Loader2, Calendar } from "lucide-react"
+import { getVehicleDocumentUrl } from "@/lib/supabase/utils"
 
 interface VehicleDocument {
   id: string
@@ -131,7 +132,7 @@ export function VehicleDocuments({ vehicleId, documents, onRefresh }: VehicleDoc
                   </div>
                 </div>
               </div>
-              <a href={doc.fileUrl} target="_blank" rel="noopener noreferrer">
+              <a href={getVehicleDocumentUrl(doc.fileUrl)} target="_blank" rel="noopener noreferrer">
                 <Button variant="outline" size="sm">
                   View
                 </Button>
