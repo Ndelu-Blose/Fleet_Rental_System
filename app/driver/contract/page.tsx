@@ -2,13 +2,19 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
+import dynamic from "next/dynamic"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Label } from "@/components/ui/label"
-import { SignaturePad } from "@/components/driver/SignaturePad"
 import { Loader2, FileText, CheckCircle2, AlertCircle, Download } from "lucide-react"
 import { toast } from "sonner"
+
+// Dynamic import to prevent SSR issues with react-signature-canvas
+const SignaturePad = dynamic(
+  () => import("@/components/driver/SignaturePad").then((m) => m.SignaturePad),
+  { ssr: false }
+)
 
 type Contract = {
   id: string
