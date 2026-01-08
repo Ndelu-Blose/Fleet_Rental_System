@@ -3,6 +3,7 @@ import KpiCards from "@/components/admin/dashboard/KpiCards";
 import ActionRequired from "@/components/admin/dashboard/ActionRequired";
 import QuickActions from "@/components/admin/dashboard/QuickActions";
 import EmptyState from "@/components/admin/dashboard/EmptyState";
+import { SetupChecklist } from "@/components/admin/SetupChecklist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Car, Users, FileCheck, AlertTriangle, Wrench } from "lucide-react";
 import Link from "next/link";
@@ -27,6 +28,8 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         <h1 className="text-3xl font-bold">Admin Dashboard</h1>
         <p className="text-muted-foreground mt-1">Overview of your fleet operations</p>
       </div>
+
+      <SetupChecklist />
 
       <KpiCards data={data} />
 

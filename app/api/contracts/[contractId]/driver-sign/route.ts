@@ -40,7 +40,7 @@ export async function POST(
       return NextResponse.json({ error: "Forbidden" }, { status: 403 })
     }
 
-    if (contract.status !== "SENT_TO_DRIVER") {
+    if (contract.status !== "SENT" && contract.status !== "SENT_TO_DRIVER") {
       return NextResponse.json({ error: "Contract is not ready for signing." }, { status: 400 })
     }
 
@@ -74,7 +74,7 @@ export async function POST(
         driverSignedAt: new Date(),
         driverSignatureUrl: signatureUrl,
         termsHash,
-        status: "DRIVER_SIGNED",
+        status: "SIGNED_BY_DRIVER",
         lockedAt: contract.lockedAt ?? new Date(),
       },
     })

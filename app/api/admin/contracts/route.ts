@@ -12,7 +12,20 @@ export async function GET(req: NextRequest) {
   try {
     await requireAdmin()
 
+    const { searchParams } = new URL(req.url)
+    const vehicleId = searchParams.get("vehicleId")
+    const driverId = searchParams.get("driverId")
+
+    const where: any = {}
+    if (vehicleId) {
+      where.vehicleId = vehicleId
+    }
+    if (driverId) {
+      where.driverId = driverId
+    }
+
     const contracts = await prisma.rentalContract.findMany({
+      where,
       include: {
         driver: {
           include: {
@@ -145,8 +158,7 @@ export async function POST(req: NextRequest) {
           dueWeekday: finalDueWeekday,
           dueDayOfMonth: finalDueDayOfMonth,
           startDate,
-          status: "SENT_TO_DRIVER", // Start as sent to driver for signing
-          sentToDriverAt: new Date(),
+          status: "DRAFT", // Start as draft - admin must send to driver
           termsText: `Vehicle Rental Agreement
 
 This agreement is between FleetHub and the driver for the rental of vehicle ${vehicle.reg}.

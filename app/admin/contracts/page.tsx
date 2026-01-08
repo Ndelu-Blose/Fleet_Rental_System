@@ -29,6 +29,7 @@ type Contract = {
     }
   }
   vehicle: {
+    id: string
     reg: string
     make: string
     model: string
@@ -64,11 +65,12 @@ export default function AdminContractsPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [loading, setLoading] = useState(true)
   const showActiveOnly = searchParams.get("status") === "active"
+  const vehicleIdParam = searchParams.get("vehicleId")
   const [showDialog, setShowDialog] = useState(false)
   const [creating, setCreating] = useState(false)
   const [formData, setFormData] = useState({
     driverProfileId: "",
-    vehicleId: "",
+    vehicleId: vehicleIdParam || "",
     feeAmountCents: "",
     frequency: "WEEKLY",
     dueWeekday: "1",
@@ -79,11 +81,19 @@ export default function AdminContractsPage() {
     fetchContracts()
     fetchDrivers()
     fetchVehicles()
-  }, [])
+    
+    // If vehicleId in URL, pre-fill form
+    if (vehicleIdParam) {
+      setFormData(prev => ({ ...prev, vehicleId: vehicleIdParam }))
+    }
+  }, [vehicleIdParam])
 
   const fetchContracts = async () => {
     try {
-      const res = await fetch("/api/admin/contracts")
+      const url = vehicleIdParam 
+        ? `/api/admin/contracts?vehicleId=${vehicleIdParam}`
+        : "/api/admin/contracts"
+      const res = await fetch(url)
       const data = await res.json()
       setContracts(data)
     } catch (error) {
@@ -178,10 +188,39 @@ export default function AdminContractsPage() {
     switch (status) {
       case "ACTIVE":
         return "bg-green-100 text-green-700"
-      case "PAUSED":
+      case "SIGNED_BY_DRIVER":
+      case "DRIVER_SIGNED":
+        return "bg-blue-100 text-blue-700"
+      case "SENT":
+      case "SENT_TO_DRIVER":
         return "bg-yellow-100 text-yellow-700"
+      case "DRAFT":
+        return "bg-gray-100 text-gray-700"
+      case "PAUSED":
+        return "bg-orange-100 text-orange-700"
+      case "ENDED":
+      case "CANCELLED":
+      case "EXPIRED":
+        return "bg-red-100 text-red-700"
       default:
         return "bg-gray-100 text-gray-700"
+    }
+  }
+
+  const getNextAction = (contract: Contract) => {
+    switch (contract.status) {
+      case "DRAFT":
+        return { label: "Send to Driver", action: "send", variant: "default" as const }
+      case "SENT":
+      case "SENT_TO_DRIVER":
+        return { label: "Waiting for Signature", action: null, variant: "outline" as const }
+      case "SIGNED_BY_DRIVER":
+      case "DRIVER_SIGNED":
+        return { label: "Activate & Generate PDF", action: "activate", variant: "default" as const }
+      case "ACTIVE":
+        return { label: "Ready for Assignment", action: null, variant: "outline" as const }
+      default:
+        return { label: "View Details", action: null, variant: "outline" as const }
     }
   }
 
@@ -205,6 +244,25 @@ export default function AdminContractsPage() {
           Create Contract
         </Button>
       </div>
+
+      {/* Show message if vehicleId param but no contract found */}
+      {vehicleIdParam && contracts.filter(c => c.vehicle.id === vehicleIdParam).length === 0 && !loading && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="pt-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-medium text-yellow-900">No Contract Found</h3>
+                <p className="text-sm text-yellow-700 mt-1">
+                  No contract exists for this vehicle yet. Create a contract to assign a driver.
+                </p>
+              </div>
+              <Button onClick={() => setShowDialog(true)}>
+                Create Contract
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid gap-4">
         {(showActiveOnly ? contracts.filter((c) => c.status === "ACTIVE") : contracts).map((contract) => (
@@ -250,46 +308,113 @@ export default function AdminContractsPage() {
                 </div>
 
                 <div className="flex gap-2">
-                  {contract.status === "DRIVER_SIGNED" && !contract.signedPdfUrl && (
-                    <Button
-                      variant="default"
-                      size="sm"
-                      onClick={async () => {
-                        try {
-                          const res = await fetch(`/api/contracts/${contract.id}/generate-signed-pdf`, {
-                            method: "POST",
-                          })
-                          const data = await res.json()
-                          if (res.ok) {
-                            toast.success("Signed PDF generated successfully!")
-                            await fetchContracts()
-                          } else {
-                            toast.error(data.error || "Failed to generate PDF")
-                          }
-                        } catch (error) {
-                          toast.error("Failed to generate PDF")
-                        }
-                      }}
-                    >
-                      <FileText className="h-4 w-4 mr-2" />
-                      Generate PDF
-                    </Button>
-                  )}
-                  {contract.signedPdfUrl && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
-                    >
-                      <Download className="h-4 w-4 mr-2" />
-                      Download PDF
-                    </Button>
-                  )}
-                  {contract.status === "ACTIVE" && (
-                    <Button variant="outline" size="sm" onClick={() => handleEndContract(contract.id)}>
-                      End Contract
-                    </Button>
-                  )}
+                  {(() => {
+                    const nextAction = getNextAction(contract)
+                    
+                    if (nextAction.action === "send") {
+                      return (
+                        <Button
+                          variant={nextAction.variant}
+                          size="sm"
+                          onClick={async () => {
+                            try {
+                              const res = await fetch(`/api/admin/contracts/${contract.id}/send`, {
+                                method: "POST",
+                              })
+                              const data = await res.json()
+                              if (res.ok) {
+                                toast.success("Contract sent to driver!")
+                                await fetchContracts()
+                              } else {
+                                toast.error(data.error || "Failed to send contract")
+                              }
+                            } catch (error) {
+                              toast.error("Failed to send contract")
+                            }
+                          }}
+                        >
+                          {nextAction.label}
+                        </Button>
+                      )
+                    }
+                    
+                    if (nextAction.action === "activate") {
+                      return (
+                        <>
+                          <Button
+                            variant={nextAction.variant}
+                            size="sm"
+                            onClick={async () => {
+                              try {
+                                // First activate
+                                const activateRes = await fetch(`/api/admin/contracts/${contract.id}/activate`, {
+                                  method: "POST",
+                                })
+                                if (!activateRes.ok) {
+                                  const data = await activateRes.json()
+                                  toast.error(data.error || "Failed to activate contract")
+                                  return
+                                }
+                                
+                                // Then generate PDF
+                                const pdfRes = await fetch(`/api/contracts/${contract.id}/generate-signed-pdf`, {
+                                  method: "POST",
+                                })
+                                const pdfData = await pdfRes.json()
+                                if (pdfRes.ok) {
+                                  toast.success("Contract activated and PDF generated!")
+                                  await fetchContracts()
+                                } else {
+                                  toast.error(pdfData.error || "Contract activated but PDF generation failed")
+                                  await fetchContracts()
+                                }
+                              } catch (error) {
+                                toast.error("Failed to activate contract")
+                              }
+                            }}
+                          >
+                            {nextAction.label}
+                          </Button>
+                          {contract.signedPdfUrl && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download PDF
+                            </Button>
+                          )}
+                        </>
+                      )
+                    }
+                    
+                    // Default actions
+                    return (
+                      <>
+                        {contract.signedPdfUrl && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
+                          >
+                            <Download className="h-4 w-4 mr-2" />
+                            Download PDF
+                          </Button>
+                        )}
+                        {contract.status === "ACTIVE" && (
+                          <Button variant="outline" size="sm" onClick={() => handleEndContract(contract.id)}>
+                            End Contract
+                          </Button>
+                        )}
+                        {!nextAction.action && (
+                          <span className="text-xs text-muted-foreground px-2 py-1 flex items-center">
+                            {nextAction.label}
+                          </span>
+                        )}
+                      </>
+                    )
+                  })()}
                 </div>
               </div>
             </CardContent>

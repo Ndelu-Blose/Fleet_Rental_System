@@ -155,6 +155,9 @@ export default function VehicleDetailsPage() {
   }
 
   const activeContract = vehicle.contracts.find((c) => c.status === "ACTIVE")
+  const pendingContract = vehicle.contracts.find((c) =>
+    ["DRAFT", "SENT", "SENT_TO_DRIVER", "SIGNED_BY_DRIVER", "DRIVER_SIGNED"].includes(c.status)
+  )
   const nextPayment = activeContract?.payments
     .filter((p) => p.status === "PENDING")
     .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0]
@@ -207,9 +210,10 @@ export default function VehicleDetailsPage() {
                   variant="default"
                   size="sm"
                   onClick={() => router.push(`/admin/contracts?vehicleId=${vehicle.id}`)}
+                  title={pendingContract ? "Complete contract workflow first" : "Create contract to assign driver"}
                 >
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Assign Driver
+                  {pendingContract ? "Complete Contract" : "Create Contract"}
                 </Button>
               )}
               {activeContract && (
@@ -303,13 +307,41 @@ export default function VehicleDetailsPage() {
                 </div>
               </CardContent>
             </Card>
+          ) : pendingContract ? (
+            <Card className="border-yellow-200 bg-yellow-50">
+              <CardHeader>
+                <CardTitle>Contract Pending</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <p className="text-sm text-yellow-800">
+                    A contract exists but is not yet active. Complete the contract workflow to assign this vehicle.
+                  </p>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-700">
+                      Status: {pendingContract.status}
+                    </span>
+                  </div>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => router.push(`/admin/contracts?vehicleId=${vehicle.id}`)}
+                  >
+                    Complete Contract
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           ) : (
             <Card className="border-dashed">
               <CardContent className="py-6 text-center">
                 <p className="text-muted-foreground mb-2">Not assigned to any driver</p>
+                <p className="text-xs text-muted-foreground mb-3">
+                  Create and activate a contract to assign this vehicle
+                </p>
                 <Button onClick={() => router.push(`/admin/contracts?vehicleId=${vehicle.id}`)}>
                   <UserPlus className="h-4 w-4 mr-2" />
-                  Assign Driver
+                  Create Contract
                 </Button>
               </CardContent>
             </Card>

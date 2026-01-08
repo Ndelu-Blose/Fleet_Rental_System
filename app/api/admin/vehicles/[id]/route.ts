@@ -29,7 +29,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         },
         contracts: {
           where: {
-            status: "ACTIVE",
+            status: {
+              in: ["DRAFT", "SENT", "SENT_TO_DRIVER", "SIGNED_BY_DRIVER", "DRIVER_SIGNED", "ACTIVE"],
+            },
           },
           include: {
             driver: {
@@ -42,6 +44,9 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
                 dueDate: "asc",
               },
             },
+          },
+          orderBy: {
+            createdAt: "desc",
           },
         },
       },

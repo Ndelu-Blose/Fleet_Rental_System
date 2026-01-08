@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       where: {
         driverId: profile.id,
         status: {
-          in: ["SENT_TO_DRIVER", "DRIVER_SIGNED", "ACTIVE"],
+          in: ["SENT", "SIGNED_BY_DRIVER", "ACTIVE"],
         },
       },
       include: {

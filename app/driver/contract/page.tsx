@@ -129,7 +129,11 @@ export default function DriverContractPage() {
   }
 
   // Contract already signed
-  if (contract.status === "DRIVER_SIGNED" || contract.status === "ACTIVE") {
+  if (
+    contract.status === "DRIVER_SIGNED" ||
+    contract.status === "SIGNED_BY_DRIVER" ||
+    contract.status === "ACTIVE"
+  ) {
     return (
       <div className="space-y-6">
         <div>
@@ -189,7 +193,7 @@ export default function DriverContractPage() {
   }
 
   // Contract needs signing
-  if (contract.status === "SENT_TO_DRIVER") {
+  if (contract.status === "SENT" || contract.status === "SENT_TO_DRIVER") {
     return (
       <div className="space-y-6">
         <div>

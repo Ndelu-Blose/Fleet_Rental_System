@@ -121,7 +121,7 @@ export default function DriverDashboardPage() {
   }
 
   // Check if contract needs signing
-  const needsSigning = contract && contract.status === "SENT_TO_DRIVER"
+  const needsSigning = contract && (contract.status === "SENT" || contract.status === "SENT_TO_DRIVER")
 
   return (
     <div className="space-y-6">

@@ -246,14 +246,16 @@ enum VehicleStatus {
 }
 
 enum ContractStatus {
-  ACTIVE
-  PAUSED
-  ENDED
-  DRAFT
-  SENT_TO_DRIVER
-  DRIVER_SIGNED
-  CANCELLED
-  EXPIRED
+  DRAFT              // Created by admin, editable
+  SENT               // Sent to driver for signature
+  SENT_TO_DRIVER     // Legacy: same as SENT
+  SIGNED_BY_DRIVER   // Driver signed and accepted terms
+  DRIVER_SIGNED      // Legacy: same as SIGNED_BY_DRIVER
+  ACTIVE             // Fully valid and active (can assign vehicle)
+  PAUSED             // Temporarily paused
+  ENDED              // Contract ended/terminated
+  CANCELLED          // Cancelled before activation
+  EXPIRED            // Contract expired
 }
 
 enum FeeFrequency {

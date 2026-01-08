@@ -35,9 +35,21 @@ export async function POST(
       return NextResponse.json({ error: "Contract not found" }, { status: 404 })
     }
 
+    // Require contract is signed by driver
+    if (
+      contract.status !== "SIGNED_BY_DRIVER" &&
+      contract.status !== "DRIVER_SIGNED" &&
+      contract.status !== "ACTIVE"
+    ) {
+      return NextResponse.json(
+        { error: `Contract must be signed by driver. Current status: ${contract.status}` },
+        { status: 400 }
+      )
+    }
+
     // Require driver signature
     if (!contract.driverSignedAt || !contract.driverSignatureUrl) {
-      return NextResponse.json({ error: "Driver has not signed yet." }, { status: 400 })
+      return NextResponse.json({ error: "Driver signature is missing." }, { status: 400 })
     }
 
     // Build PDF
