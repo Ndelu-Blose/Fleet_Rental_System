@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { CheckCircle2, XCircle, FileText, Loader2 } from "lucide-react"
+import { CheckCircle2, XCircle, FileText, Loader2, Download, Eye } from "lucide-react"
 import Image from "next/image"
 
 interface Document {
@@ -21,6 +21,37 @@ interface Document {
 interface AdminDocReviewProps {
   document: Document
   onReview: (docId: string, status: "APPROVED" | "REJECTED", note: string) => Promise<void>
+}
+
+function getDocumentLabel(type: string): string {
+  switch (type) {
+    case "DRIVER_PHOTO":
+      return "Driver Photo"
+    case "CERTIFIED_ID":
+      return "Certified ID"
+    case "PROOF_OF_RESIDENCE":
+      return "Proof of Residence"
+    default:
+      return type.replace(/_/g, " ")
+  }
+}
+
+function formatDate(dateString: string): string {
+  return new Date(dateString).toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  })
+}
+
+function downloadFile(url: string, fileName: string | null) {
+  const link = document.createElement("a")
+  link.href = url
+  link.download = fileName || "document"
+  link.target = "_blank"
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
@@ -39,49 +70,104 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
     }
   }
 
-  const isImage = document.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+  const isImage = document.fileUrl && document.fileUrl.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+  const isPDF = document.fileUrl && document.fileUrl.match(/\.pdf$/i)
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case "APPROVED":
+        return "bg-green-100 text-green-700 border-green-200"
+      case "REJECTED":
+        return "bg-red-100 text-red-700 border-red-200"
+      default:
+        return "bg-yellow-100 text-yellow-700 border-yellow-200"
+    }
+  }
 
   return (
     <Card className="p-4">
       <div className="space-y-4">
-        <div className="flex items-start justify-between">
-          <div>
-            <h3 className="font-medium">{document.type.replace(/_/g, " ")}</h3>
-            <p className="text-sm text-muted-foreground">{document.fileName}</p>
+        {/* Document Header */}
+        <div className="flex items-start gap-4">
+          {/* Thumbnail or Icon */}
+          <div className="flex-shrink-0">
+            {isImage ? (
+              <div className="relative w-24 h-24 rounded-lg border overflow-hidden bg-secondary/30">
+                <Image
+                  src={document.fileUrl}
+                  alt={getDocumentLabel(document.type)}
+                  width={96}
+                  height={96}
+                  className="object-cover w-full h-full cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => window.open(document.fileUrl, "_blank")}
+                />
+              </div>
+            ) : (
+              <div className="w-24 h-24 rounded-lg border flex items-center justify-center bg-secondary/30">
+                {isPDF ? (
+                  <FileText className="h-12 w-12 text-red-600" />
+                ) : (
+                  <FileText className="h-12 w-12 text-muted-foreground" />
+                )}
+              </div>
+            )}
           </div>
-          <span
-            className={`text-xs font-medium px-2 py-1 rounded ${
-              document.status === "APPROVED"
-                ? "bg-green-100 text-green-700"
-                : document.status === "REJECTED"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-yellow-100 text-yellow-700"
-            }`}
-          >
-            {document.status}
-          </span>
-        </div>
 
-        <div className="border rounded-lg overflow-hidden bg-secondary/30">
-          {isImage ? (
-            <div className="relative w-full aspect-video">
-              <Image src={document.fileUrl || "/placeholder.svg"} alt={document.type} fill className="object-contain" />
+          {/* Document Info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2 mb-2">
+              <div className="flex-1 min-w-0">
+                <h3 className="font-medium text-base">{getDocumentLabel(document.type)}</h3>
+                {document.fileName && (
+                  <p className="text-sm text-muted-foreground truncate">{document.fileName}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Uploaded: {formatDate(document.createdAt)}
+                </p>
+              </div>
+              <span
+                className={`text-xs font-medium px-2 py-1 rounded border whitespace-nowrap ${getStatusColor(document.status)}`}
+              >
+                {document.status}
+              </span>
             </div>
-          ) : (
-            <a
-              href={document.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-2 p-8 hover:bg-secondary/50 transition-colors"
-            >
-              <FileText className="h-8 w-8" />
-              <span className="text-sm">Open Document</span>
-            </a>
-          )}
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 mt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.open(document.fileUrl, "_blank")}
+                className="flex items-center gap-1"
+              >
+                <Eye className="h-3 w-3" />
+                View
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => downloadFile(document.fileUrl, document.fileName)}
+                className="flex items-center gap-1"
+              >
+                <Download className="h-3 w-3" />
+                Download
+              </Button>
+            </div>
+          </div>
         </div>
 
+        {/* Review Note (if exists) */}
+        {document.reviewNote && (
+          <div className="p-3 bg-secondary rounded-md border-l-2 border-primary">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium">Review Note:</span> {document.reviewNote}
+            </p>
+          </div>
+        )}
+
+        {/* Approve/Reject Controls (only for PENDING) */}
         {document.status === "PENDING" && (
-          <div className="space-y-3">
+          <div className="space-y-3 pt-3 border-t">
             <div className="space-y-2">
               <Label htmlFor={`note-${document.id}`}>Review Note (Optional)</Label>
               <Textarea
@@ -124,14 +210,6 @@ export function AdminDocReview({ document, onReview }: AdminDocReviewProps) {
                 )}
               </Button>
             </div>
-          </div>
-        )}
-
-        {document.reviewNote && (
-          <div className="p-3 bg-secondary rounded-md">
-            <p className="text-sm text-muted-foreground">
-              <span className="font-medium">Note:</span> {document.reviewNote}
-            </p>
           </div>
         )}
       </div>
