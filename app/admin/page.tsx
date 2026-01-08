@@ -5,8 +5,20 @@ import QuickActions from "@/components/admin/dashboard/QuickActions";
 import EmptyState from "@/components/admin/dashboard/EmptyState";
 import { SetupChecklist } from "@/components/admin/SetupChecklist";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Car, Users, FileCheck, AlertTriangle, Wrench } from "lucide-react";
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
+
+// Timeout wrapper to prevent hanging
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error(`Dashboard timeout after ${ms}ms`)), ms)
+    ),
+  ]);
+}
 
 type Props = {
   searchParams?: Promise<{ range?: "all" | "month" | "week" }>;
@@ -18,12 +30,15 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
   
   let data: Awaited<ReturnType<typeof getAdminDashboardData>>;
   let hasError = false;
+  let errorMessage: string | null = null;
   
   try {
-    data = await getAdminDashboardData(range);
+    // Hard timeout: 8 seconds max for dashboard data
+    data = await withTimeout(getAdminDashboardData(range), 8000);
   } catch (error) {
     console.error("[Dashboard] Failed to load:", error);
     hasError = true;
+    errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
     // Return minimal default data structure
     data = {
       range,
@@ -87,11 +102,16 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         <Card className="border-red-200 bg-red-50">
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
-              <div>
+              <div className="flex-1">
                 <h3 className="font-medium text-red-900">Dashboard Data Unavailable</h3>
                 <p className="text-sm text-red-700 mt-1">
                   Some dashboard data could not be loaded. Please refresh the page or contact support if the issue persists.
                 </p>
+                {errorMessage && (
+                  <p className="text-xs text-red-600 mt-2 font-mono">
+                    {errorMessage}
+                  </p>
+                )}
               </div>
               <form action={async () => {
                 "use server"
