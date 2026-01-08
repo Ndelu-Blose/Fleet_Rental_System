@@ -25,20 +25,26 @@ export async function POST(
       )
     }
 
-    // Update contract to ACTIVE
-    // Note: PDF generation should be done separately via the generate-signed-pdf endpoint
-    const updated = await prisma.rentalContract.update({
-      where: { id: contract.id },
-      data: {
-        status: "ACTIVE",
-        adminSignedAt: new Date(),
-      },
-    })
-
-    // Generate first payment now that contract is active
+    // Update contract to ACTIVE, assign vehicle, and generate first payment in a transaction
     const { createFirstPayment } = await import("@/lib/payments/generator")
 
-    await prisma.$transaction(async (tx) => {
+    const updated = await prisma.$transaction(async (tx) => {
+      // Update contract status to ACTIVE
+      const contractUpdated = await tx.rentalContract.update({
+        where: { id: contract.id },
+        data: {
+          status: "ACTIVE",
+          adminSignedAt: new Date(),
+        },
+      })
+
+      // Assign vehicle only now that contract is ACTIVE
+      await tx.vehicle.update({
+        where: { id: contract.vehicleId },
+        data: { status: "ASSIGNED" },
+      })
+
+      // Generate first payment now that contract is active
       await createFirstPayment(tx, {
         contractId: contract.id,
         amountCents: contract.feeAmountCents,
@@ -47,6 +53,8 @@ export async function POST(
         dueWeekday: contract.dueWeekday,
         dueDayOfMonth: contract.dueDayOfMonth,
       })
+
+      return contractUpdated
     })
 
     return NextResponse.json({ ok: true, contract: updated })

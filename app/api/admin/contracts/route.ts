@@ -100,6 +100,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Vehicle is not available" }, { status: 400 })
     }
 
+    // Safety check: ensure vehicle doesn't already have an ACTIVE contract
+    const existingActive = await prisma.rentalContract.findFirst({
+      where: {
+        vehicleId,
+        status: "ACTIVE",
+      },
+      select: { id: true },
+    })
+
+    if (existingActive) {
+      return NextResponse.json(
+        { error: "Vehicle already has an active contract. End the existing contract first." },
+        { status: 400 }
+      )
+    }
+
     // Load defaults from settings
     const defaultCar = await getSettingInt("contracts.default.carAmount", 0)
     const defaultBike = await getSettingInt("contracts.default.bikeAmount", 0)
@@ -187,14 +203,9 @@ Failure to comply may result in contract termination.`,
         },
       })
 
-      // Update vehicle status to ASSIGNED (but contract is still SENT_TO_DRIVER until signed)
-      await tx.vehicle.update({
-        where: { id: vehicleId },
-        data: { status: "ASSIGNED" },
-      })
-
+      // Don't assign vehicle here - vehicle stays AVAILABLE until contract is ACTIVE
       // Don't create payments yet - wait until contract is signed and becomes ACTIVE
-      // Payments will be generated when admin generates the signed PDF
+      // Payments will be generated when admin activates the contract
 
       return created
     })
