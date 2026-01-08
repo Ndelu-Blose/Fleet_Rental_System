@@ -5,6 +5,32 @@ import { uploadDriverDocument } from "@/lib/supabase"
 import { updateProfileCompletion } from "@/lib/verification"
 import { validateDriverDocument } from "@/lib/file-validation"
 
+export async function GET(req: NextRequest) {
+  try {
+    const session = await requireDriver()
+
+    const profile = await prisma.driverProfile.findUnique({
+      where: { userId: session.user.id },
+      include: {
+        documents: {
+          orderBy: {
+            createdAt: "desc",
+          },
+        },
+      },
+    })
+
+    if (!profile) {
+      return NextResponse.json({ error: "Profile not found" }, { status: 404 })
+    }
+
+    return NextResponse.json(profile.documents)
+  } catch (error) {
+    console.error("[v0] Get documents error:", error)
+    return NextResponse.json({ error: "Failed to fetch documents" }, { status: 500 })
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const session = await requireDriver()

@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, Suspense } from "react"
+import { useSearchParams } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
@@ -37,7 +38,8 @@ type Driver = {
   }>
 }
 
-export default function AdminVerificationPage() {
+function AdminVerificationContent() {
+  const searchParams = useSearchParams()
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedDriver, setSelectedDriver] = useState<Driver | null>(null)
@@ -48,13 +50,33 @@ export default function AdminVerificationPage() {
     fetchDrivers()
   }, [])
 
+  useEffect(() => {
+    const driverId = searchParams.get("driverId")
+    if (driverId && drivers.length > 0) {
+      const driver = drivers.find((d) => d.id === driverId)
+      if (driver) {
+        setSelectedDriver(driver)
+      }
+    }
+  }, [searchParams, drivers])
+
   const fetchDrivers = async () => {
     try {
-      const res = await fetch("/api/admin/verification?status=IN_REVIEW")
+      const driverId = searchParams.get("driverId")
+      const url = driverId 
+        ? `/api/admin/verification?driverId=${driverId}`
+        : "/api/admin/verification"
+      const res = await fetch(url)
       const data = await res.json()
       setDrivers(data)
       if (data.length > 0 && !selectedDriver) {
-        setSelectedDriver(data[0])
+        const driverIdParam = searchParams.get("driverId")
+        if (driverIdParam) {
+          const driver = data.find((d: Driver) => d.id === driverIdParam)
+          setSelectedDriver(driver || data[0])
+        } else {
+          setSelectedDriver(data[0])
+        }
       }
     } catch (error) {
       console.error("Failed to fetch drivers:", error)
@@ -275,5 +297,17 @@ export default function AdminVerificationPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function AdminVerificationPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    }>
+      <AdminVerificationContent />
+    </Suspense>
   )
 }

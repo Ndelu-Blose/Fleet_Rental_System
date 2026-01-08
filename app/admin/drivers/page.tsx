@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -26,7 +27,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { toast } from "sonner"
-import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye, Copy, ExternalLink, CheckCircle2, UserCheck, Lock } from "lucide-react"
+import { Loader2, UserPlus, Mail, Phone, MoreVertical, Trash2, MailCheck, Eye, Copy, ExternalLink, CheckCircle2, UserCheck, Lock, Search, Filter } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
 type Driver = {
   id: string
@@ -52,8 +54,11 @@ type Driver = {
 }
 
 export default function AdminDriversPage() {
+  const router = useRouter()
   const [drivers, setDrivers] = useState<Driver[]>([])
   const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState<string>("all")
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [creating, setCreating] = useState(false)
   const [activationLink, setActivationLink] = useState("")
@@ -267,6 +272,23 @@ export default function AdminDriversPage() {
     }
   }
 
+  const filteredDrivers = drivers.filter((driver) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      driver.user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      driver.user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      driver.user.phone?.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesStatus =
+      statusFilter === "all" ||
+      (statusFilter === "verified" && driver.verificationStatus === "VERIFIED") ||
+      (statusFilter === "in_review" && driver.verificationStatus === "IN_REVIEW") ||
+      (statusFilter === "unverified" && driver.verificationStatus === "UNVERIFIED") ||
+      (statusFilter === "no_vehicle" && driver.contracts.length === 0)
+
+    return matchesSearch && matchesStatus
+  })
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -288,8 +310,33 @@ export default function AdminDriversPage() {
         </Button>
       </div>
 
+      <div className="flex items-center gap-4">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search by name, email, or phone..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="w-[180px]">
+            <Filter className="mr-2 h-4 w-4" />
+            <SelectValue placeholder="Filter by status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Drivers</SelectItem>
+            <SelectItem value="verified">Verified</SelectItem>
+            <SelectItem value="in_review">In Review</SelectItem>
+            <SelectItem value="unverified">Unverified</SelectItem>
+            <SelectItem value="no_vehicle">No Vehicle</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="grid gap-4">
-        {drivers.map((driver) => (
+        {filteredDrivers.map((driver) => (
           <Card key={driver.id}>
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
@@ -342,7 +389,7 @@ export default function AdminDriversPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => window.open(`/admin/verification?driverId=${driver.id}`, "_blank")}
+                        onClick={() => router.push(`/admin/drivers/${driver.id}`)}
                       >
                         <Eye className="mr-2 h-4 w-4" />
                         View Details
@@ -412,6 +459,14 @@ export default function AdminDriversPage() {
           </Card>
         ))}
 
+        {filteredDrivers.length === 0 && drivers.length > 0 && (
+          <Card>
+            <CardContent className="py-12 text-center">
+              <p className="text-muted-foreground">No drivers match your search criteria.</p>
+            </CardContent>
+          </Card>
+        )}
+
         {drivers.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center">
@@ -435,13 +490,16 @@ export default function AdminDriversPage() {
                   <div>
                     <p className="text-sm text-green-900 font-medium mb-2 flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4" />
-                      Driver Created
+                      Driver Created ✅
                     </p>
                     <p className="text-sm text-green-700 mb-2">
-                      We sent an activation email to: <strong>{createdDriverEmail || formData.email}</strong>
+                      An activation link is ready. Send it to the driver via WhatsApp/SMS.
+                    </p>
+                    <p className="text-xs text-green-700 mb-2">
+                      Email sent to: <strong>{createdDriverEmail || formData.email}</strong>
                     </p>
                     <p className="text-xs text-green-700">
-                      The driver should check their inbox (and spam folder) and click "Activate account" in the email.
+                      Note: Email delivery may land in Spam folder. You can also copy the link below.
                     </p>
                   </div>
                   <div className="space-y-2">
@@ -465,7 +523,17 @@ export default function AdminDriversPage() {
                         }}
                       >
                         <Copy className="mr-2 h-3 w-3" />
-                        Copy Link
+                        Copy Activation Link
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => window.open(activationLink, "_blank")}
+                      >
+                        <ExternalLink className="mr-2 h-3 w-3" />
+                        Open Link
                       </Button>
                       <Button
                         type="button"
@@ -516,19 +584,19 @@ export default function AdminDriversPage() {
                   <div>
                     <p className="text-sm text-yellow-900 font-medium mb-2 flex items-center gap-2">
                       <CheckCircle2 className="h-4 w-4" />
-                      Driver Created
+                      Driver Created ✅
                     </p>
                     <p className="text-sm text-yellow-700 mb-2">
-                      Email delivery delayed. You can still activate the driver via WhatsApp or SMS.
+                      An activation link is ready. Send it to the driver via WhatsApp/SMS.
                     </p>
-                    <p className="text-xs text-yellow-700 mb-3">
-                      Copy the activation link below and send it to the driver.
+                    <p className="text-xs text-yellow-700 mb-2">
+                      Email delivery may land in Spam folder.
                     </p>
                     {/* Technical details - hidden by default, only for admins */}
                     {emailErrorTechnical && (
                       <details className="mt-2">
                         <summary className="cursor-pointer text-xs text-yellow-800 font-medium hover:text-yellow-900 underline">
-                          Show technical details
+                          Technical Details
                         </summary>
                         <div className="mt-2 p-2 bg-white border border-yellow-200 rounded text-yellow-900">
                           <pre className="whitespace-pre-wrap text-xs overflow-auto max-h-32">
@@ -559,7 +627,17 @@ export default function AdminDriversPage() {
                         }}
                       >
                         <Copy className="mr-2 h-3 w-3" />
-                        Copy Link
+                        Copy Activation Link
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="text-xs"
+                        onClick={() => window.open(activationLink, "_blank")}
+                      >
+                        <ExternalLink className="mr-2 h-3 w-3" />
+                        Open Link
                       </Button>
                       <Button
                         type="button"

@@ -30,10 +30,10 @@ export function calculateProfileCompletion(profile: ProfileWithDocuments): numbe
   // Location verified
   if (profile.lastLocationAt) completed++
 
-  // Documents
-  const hasPhoto = profile.documents.some((d) => d.type === "DRIVER_PHOTO")
-  const hasCertifiedId = profile.documents.some((d) => d.type === "CERTIFIED_ID")
-  const hasProofOfResidence = profile.documents.some((d) => d.type === "PROOF_OF_RESIDENCE")
+  // Documents - only count if approved
+  const hasPhoto = profile.documents.some((d) => d.type === "DRIVER_PHOTO" && d.status === "APPROVED")
+  const hasCertifiedId = profile.documents.some((d) => d.type === "CERTIFIED_ID" && d.status === "APPROVED")
+  const hasProofOfResidence = profile.documents.some((d) => d.type === "PROOF_OF_RESIDENCE" && d.status === "APPROVED")
 
   if (hasPhoto) completed++
   if (hasCertifiedId && hasProofOfResidence) completed++

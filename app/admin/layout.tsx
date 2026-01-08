@@ -1,12 +1,10 @@
 import type React from "react"
 import { requireAdmin } from "@/lib/permissions"
-import { Button } from "@/components/ui/button"
-import { signOut } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
-import { redirect } from "next/navigation"
 import Link from "next/link"
 import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus, UserCircle, Settings } from "lucide-react"
 import { NotificationsDropdown } from "./_components/notifications-dropdown"
+import { SignOutButton } from "./_components/sign-out-button"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin()
@@ -18,13 +16,6 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   })
 
   const displayEmail = user?.email || session.user.email
-
-  async function handleSignOut() {
-    "use server"
-    await signOut({ redirectTo: "/login?signedOut=true", redirect: true })
-    // Force redirect in case signOut doesn't redirect
-    redirect("/login?signedOut=true")
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -38,11 +29,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             <div className="flex items-center gap-4">
               <NotificationsDropdown />
               <span className="text-sm text-muted-foreground">{displayEmail}</span>
-              <form action={handleSignOut}>
-                <Button variant="outline" size="sm" type="submit">
-                  Sign Out
-                </Button>
-              </form>
+              <SignOutButton />
             </div>
           </div>
         </div>

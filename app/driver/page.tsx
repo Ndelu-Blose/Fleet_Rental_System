@@ -17,6 +17,10 @@ import {
   FileText,
   MapPin,
   CreditCard,
+  Upload,
+  User,
+  HelpCircle,
+  Wrench,
 } from "lucide-react"
 
 type Contract = {
@@ -407,6 +411,110 @@ export default function DriverDashboardPage() {
           </CardContent>
         </Card>
       )}
+
+      {/* Action Cards Section */}
+      <div>
+        <h2 className="text-xl font-bold mb-4">Quick Actions</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {contract && nextPayment && nextPayment.status !== "PAID" && (
+            <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => router.push("/driver/payments")}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-primary/10 rounded-lg">
+                    <CreditCard className="h-6 w-6 text-primary" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">Pay Now</h3>
+                    <p className="text-sm text-muted-foreground">Make your payment</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {contract && (
+            <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => router.push("/driver/payments")}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-100 rounded-lg">
+                    <FileText className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">View Contract</h3>
+                    <p className="text-sm text-muted-foreground">See contract details</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {profile && profile.completionPercent < 100 && (
+            <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => router.push("/driver/profile")}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-yellow-100 rounded-lg">
+                    <Upload className="h-6 w-6 text-yellow-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">Upload Documents</h3>
+                    <p className="text-sm text-muted-foreground">Complete your profile</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => router.push("/driver/profile")}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-green-100 rounded-lg">
+                  <User className="h-6 w-6 text-green-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium">Update Profile</h3>
+                  <p className="text-sm text-muted-foreground">Edit your information</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => {
+            // TODO: Implement support/contact functionality
+            window.location.href = `mailto:support@fleethub.com?subject=Support Request&body=Hello, I need assistance with...`
+          }}>
+            <CardContent className="pt-6">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-purple-100 rounded-lg">
+                  <HelpCircle className="h-6 w-6 text-purple-600" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium">Contact Support</h3>
+                  <p className="text-sm text-muted-foreground">Get help from admin</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {contract && (
+            <Card className="cursor-pointer hover:border-primary transition-colors" onClick={() => {
+              // TODO: Implement vehicle issue reporting
+              window.location.href = `mailto:support@fleethub.com?subject=Vehicle Issue Report&body=Vehicle: ${contract.vehicle.reg}%0D%0A%0D%0AIssue: `
+            }}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-red-100 rounded-lg">
+                    <Wrench className="h-6 w-6 text-red-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="font-medium">Report Vehicle Issue</h3>
+                    <p className="text-sm text-muted-foreground">Report a problem</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
     </div>
   )
 }

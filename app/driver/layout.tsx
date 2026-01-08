@@ -1,11 +1,10 @@
 import type React from "react"
 import { requireDriver } from "@/lib/permissions"
-import { Button } from "@/components/ui/button"
-import { signOut } from "@/lib/auth"
 import { getSettingBool } from "@/lib/settings"
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { Car, User, CreditCard } from "lucide-react"
+import { Car, User, CreditCard, FileText } from "lucide-react"
+import { SignOutButton } from "./_components/sign-out-button"
 
 export default async function DriverLayout({ children }: { children: React.ReactNode }) {
   // Check maintenance mode
@@ -15,13 +14,6 @@ export default async function DriverLayout({ children }: { children: React.React
   }
 
   const session = await requireDriver()
-
-  async function handleSignOut() {
-    "use server"
-    await signOut({ redirectTo: "/login?signedOut=true", redirect: true })
-    // Force redirect in case signOut doesn't redirect
-    redirect("/login?signedOut=true")
-  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -34,11 +26,7 @@ export default async function DriverLayout({ children }: { children: React.React
             </div>
             <div className="flex items-center gap-4">
               <span className="text-sm text-muted-foreground">{session.user.email}</span>
-              <form action={handleSignOut}>
-                <Button variant="outline" size="sm" type="submit">
-                  Sign Out
-                </Button>
-              </form>
+              <SignOutButton />
             </div>
           </div>
         </div>
@@ -71,6 +59,15 @@ export default async function DriverLayout({ children }: { children: React.React
             <div className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
               Payments
+            </div>
+          </Link>
+          <Link
+            href="/driver/documents"
+            className="px-4 py-2 text-sm font-medium hover:text-primary border-b-2 border-transparent hover:border-primary"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              Documents
             </div>
           </Link>
         </nav>

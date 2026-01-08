@@ -7,12 +7,22 @@ export async function GET(req: NextRequest) {
     await requireAdmin()
 
     const { searchParams } = new URL(req.url)
-    const status = searchParams.get("status") || "IN_REVIEW"
+    const status = searchParams.get("status")
+    const driverId = searchParams.get("driverId")
+
+    const where: any = {}
+    
+    if (driverId) {
+      where.id = driverId
+    } else if (status) {
+      where.verificationStatus = status
+    } else {
+      // Default: show both IN_REVIEW and PENDING
+      where.verificationStatus = { in: ["IN_REVIEW", "PENDING"] }
+    }
 
     const drivers = await prisma.driverProfile.findMany({
-      where: {
-        verificationStatus: status as any,
-      },
+      where,
       include: {
         user: {
           select: {

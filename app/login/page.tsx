@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import Link from "next/link"
 import { RefreshButton } from "./_components/refresh-button"
+import { LoginRefresh } from "./_components/login-refresh"
 
 // Force dynamic rendering to ensure Server Actions work on Vercel
 export const dynamic = "force-dynamic"
@@ -52,6 +53,7 @@ export default async function LoginPage({
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background p-4">
+      <LoginRefresh />
       <Card className="w-full max-w-md">
         <CardHeader>
           <CardTitle>FleetHub Login</CardTitle>
