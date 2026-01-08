@@ -7,6 +7,227 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id                   String         @id @default(cuid())
+  name                 String?
+  email                String         @unique
+  phone                String?
+  password             String?
+  role                 Role           @default(DRIVER)
+  isEmailVerified      Boolean        @default(false)
+  isActive             Boolean        @default(true)
+  activationToken      String?        @unique
+  activationExpires    DateTime?
+  resetPasswordToken   String?        @unique
+  resetPasswordExpires DateTime?
+  emailChangePending   String?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  driverProfile        DriverProfile?
+}
+
+model DriverProfile {
+  id                 String             @id @default(cuid())
+  userId             String             @unique
+  idNumber           String?
+  addressLine1       String?
+  addressLine2       String?
+  city               String?
+  province           String?
+  postalCode         String?
+  verificationStatus VerificationStatus @default(UNVERIFIED)
+  verificationNote   String?
+  completionPercent  Int                @default(0)
+  lastLat            Float?
+  lastLng            Float?
+  lastAccuracy       Float?
+  lastLocationAt     DateTime?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+  documents          DriverDocument[]
+  user               User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contracts          RentalContract[]
+}
+
+model DriverDocument {
+  id         String        @id @default(cuid())
+  driverId   String
+  type       DocType
+  fileUrl    String
+  fileName   String?
+  mimeType   String?
+  sizeBytes  Int?
+  status     ReviewStatus  @default(PENDING)
+  reviewNote String?
+  reviewedBy String?
+  reviewedAt DateTime?
+  createdAt  DateTime      @default(now())
+  driver     DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
+}
+
+model Vehicle {
+  id          String               @id @default(cuid())
+  type        VehicleType
+  reg         String               @unique
+  make        String
+  model       String
+  year        Int?
+  status      VehicleStatus        @default(AVAILABLE)
+  notes       String?
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+  contracts   RentalContract[]
+  compliance  VehicleCompliance?
+  costs       VehicleCost[]
+  documents   VehicleDocument[]
+  maintenance VehicleMaintenance[]
+}
+
+model VehicleCompliance {
+  id               String    @id @default(cuid())
+  vehicleId        String    @unique
+  licenseExpiry    DateTime?
+  insuranceExpiry  DateTime?
+  roadworthyExpiry DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  vehicle          Vehicle   @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+}
+
+model VehicleDocument {
+  id        String         @id @default(cuid())
+  vehicleId String
+  type      VehicleDocType
+  title     String?
+  fileUrl   String
+  fileName  String?
+  mimeType  String?
+  sizeBytes Int?
+  issuedAt  DateTime?
+  expiresAt DateTime?
+  createdAt DateTime       @default(now())
+  vehicle   Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([type])
+  @@index([expiresAt])
+}
+
+model VehicleMaintenance {
+  id                 String            @id @default(cuid())
+  vehicleId          String
+  title              String
+  description        String?
+  status             MaintenanceStatus @default(PLANNED)
+  scheduledAt        DateTime?
+  completedAt        DateTime?
+  odometerKm         Int?
+  estimatedCostCents Int?
+  actualCostCents    Int?
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  vehicle            Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([status])
+  @@index([scheduledAt])
+}
+
+model VehicleCost {
+  id          String   @id @default(cuid())
+  vehicleId   String
+  type        CostType
+  title       String?
+  amountCents Int
+  occurredAt  DateTime @default(now())
+  vendor      String?
+  notes       String?
+  receiptUrl  String?
+  createdAt   DateTime @default(now())
+  vehicle     Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+
+  @@index([vehicleId])
+  @@index([type])
+  @@index([occurredAt])
+}
+
+model RentalContract {
+  id                   String         @id @default(cuid())
+  driverId             String
+  vehicleId            String
+  feeAmountCents       Int
+  frequency            FeeFrequency
+  dueWeekday           Int?
+  dueDayOfMonth        Int?
+  startDate            DateTime
+  endDate              DateTime?
+  status               ContractStatus @default(DRAFT)
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  adminSignatureUrl    String?
+  adminSignedAt        DateTime?
+  driverSignatureUrl   String?
+  driverSignedAt       DateTime?
+  lockedAt             DateTime?
+  sentToDriverAt       DateTime?
+  signedPdfGeneratedAt DateTime?
+  signedPdfUrl         String?
+  termsHash            String?
+  termsText            String?
+  termsVersion         String         @default("v1")
+  payments             Payment[]
+  driver               DriverProfile  @relation(fields: [driverId], references: [id])
+  vehicle              Vehicle        @relation(fields: [vehicleId], references: [id])
+
+  @@index([driverId])
+  @@index([vehicleId])
+  @@index([status])
+}
+
+model Payment {
+  id              String         @id @default(cuid())
+  contractId      String
+  amountCents     Int
+  dueDate         DateTime
+  status          PaymentStatus  @default(PENDING)
+  stripeSessionId String?        @unique
+  paidAt          DateTime?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  contract        RentalContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
+
+  @@index([dueDate])
+  @@index([status])
+}
+
+model AppSetting {
+  id        String   @id @default(cuid())
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+
+  @@index([key])
+}
+
+model Notification {
+  id        String               @id @default(cuid())
+  userId    String
+  type      NotificationType
+  priority  NotificationPriority @default(MEDIUM)
+  title     String
+  message   String
+  link      String?
+  read      Boolean              @default(false)
+  readAt    DateTime?
+  metadata  Json?
+  createdAt DateTime             @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+  @@index([type])
+}
+
 enum Role {
   ADMIN
   DRIVER
@@ -25,12 +246,12 @@ enum VehicleStatus {
 }
 
 enum ContractStatus {
-  DRAFT
-  SENT_TO_DRIVER
-  DRIVER_SIGNED
   ACTIVE
   PAUSED
   ENDED
+  DRAFT
+  SENT_TO_DRIVER
+  DRIVER_SIGNED
   CANCELLED
   EXPIRED
 }
@@ -123,268 +344,4 @@ enum NotificationPriority {
   MEDIUM
   HIGH
   URGENT
-}
-
-model User {
-  id       String  @id @default(cuid())
-  name     String?
-  email    String  @unique
-  phone    String?
-  password String?
-  role     Role    @default(DRIVER)
-
-  isEmailVerified Boolean @default(false)
-  isActive        Boolean @default(true)
-
-  activationToken   String?   @unique
-  activationExpires DateTime?
-
-  resetPasswordToken   String?   @unique
-  resetPasswordExpires DateTime?
-
-  emailChangePending String?
-
-  driverProfile DriverProfile?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model DriverProfile {
-  id     String @id @default(cuid())
-  userId String @unique
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  idNumber     String?
-  addressLine1 String?
-  addressLine2 String?
-  city         String?
-  province     String?
-  postalCode   String?
-
-  verificationStatus VerificationStatus @default(UNVERIFIED)
-  verificationNote   String?
-  completionPercent  Int                @default(0)
-
-  lastLat        Float?
-  lastLng        Float?
-  lastAccuracy   Float?
-  lastLocationAt DateTime?
-
-  documents DriverDocument[]
-  contracts RentalContract[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model DriverDocument {
-  id       String        @id @default(cuid())
-  driverId String
-  driver   DriverProfile @relation(fields: [driverId], references: [id], onDelete: Cascade)
-
-  type      DocType
-  fileUrl   String
-  fileName  String?
-  mimeType  String?
-  sizeBytes Int?
-
-  status     ReviewStatus @default(PENDING)
-  reviewNote String?
-  reviewedBy String?
-  reviewedAt DateTime?
-
-  createdAt DateTime @default(now())
-}
-
-model Vehicle {
-  id     String        @id @default(cuid())
-  type   VehicleType
-  reg    String        @unique
-  make   String
-  model  String
-  year   Int?
-  status VehicleStatus @default(AVAILABLE)
-  notes  String?
-
-  compliance  VehicleCompliance?
-  documents   VehicleDocument[]
-  maintenance VehicleMaintenance[]
-  costs       VehicleCost[]
-  contracts   RentalContract[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model VehicleCompliance {
-  id        String  @id @default(cuid())
-  vehicleId String  @unique
-  vehicle   Vehicle @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  licenseExpiry    DateTime?
-  insuranceExpiry  DateTime?
-  roadworthyExpiry DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model VehicleDocument {
-  id        String         @id @default(cuid())
-  vehicleId String
-  vehicle   Vehicle        @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  type      VehicleDocType
-  title     String?
-  fileUrl   String
-  fileName  String?
-  mimeType  String?
-  sizeBytes Int?
-
-  issuedAt  DateTime?
-  expiresAt DateTime?
-
-  createdAt DateTime @default(now())
-
-  @@index([vehicleId])
-  @@index([type])
-  @@index([expiresAt])
-}
-
-model VehicleMaintenance {
-  id        String            @id @default(cuid())
-  vehicleId String
-  vehicle   Vehicle           @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  title       String
-  description String?
-  status      MaintenanceStatus @default(PLANNED)
-
-  scheduledAt DateTime?
-  completedAt DateTime?
-  odometerKm  Int?
-
-  estimatedCostCents Int?
-  actualCostCents    Int?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([vehicleId])
-  @@index([status])
-  @@index([scheduledAt])
-}
-
-model VehicleCost {
-  id        String   @id @default(cuid())
-  vehicleId String
-  vehicle   Vehicle  @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
-
-  type        CostType
-  title       String?
-  amountCents Int
-  occurredAt  DateTime @default(now())
-
-  vendor     String?
-  notes      String?
-  receiptUrl String?
-
-  createdAt DateTime @default(now())
-
-  @@index([vehicleId])
-  @@index([type])
-  @@index([occurredAt])
-}
-
-model RentalContract {
-  id        String @id @default(cuid())
-  driverId  String
-  vehicleId String
-
-  driver  DriverProfile @relation(fields: [driverId], references: [id])
-  vehicle Vehicle       @relation(fields: [vehicleId], references: [id])
-
-  feeAmountCents Int
-  frequency      FeeFrequency
-  dueWeekday     Int? // 0-6 for weekly (0=Sunday, 6=Saturday)
-  dueDayOfMonth  Int? // 1-28 for monthly contracts
-  startDate      DateTime
-  endDate        DateTime?
-  status         ContractStatus @default(DRAFT)
-
-  // Contract signing fields
-  termsVersion      String   @default("v1")
-  termsHash         String?  // sha256 of the terms content at signing time
-  termsText         String?  // Store the contract terms text
-
-  sentToDriverAt    DateTime?
-  driverSignedAt    DateTime?
-  adminSignedAt     DateTime?
-
-  driverSignatureUrl String? // stored image in Supabase
-  adminSignatureUrl  String? // optional
-
-  signedPdfUrl      String?  // stored final PDF in Supabase
-  signedPdfGeneratedAt DateTime?
-
-  lockedAt          DateTime? // set once sent or once signed
-
-  payments Payment[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([driverId])
-  @@index([vehicleId])
-  @@index([status])
-}
-
-model Payment {
-  id         String         @id @default(cuid())
-  contractId String
-  contract   RentalContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
-
-  amountCents Int
-  dueDate     DateTime
-  status      PaymentStatus @default(PENDING)
-
-  stripeSessionId String?   @unique
-  paidAt          DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@index([dueDate])
-  @@index([status])
-}
-
-model AppSetting {
-  id        String   @id @default(cuid())
-  key       String   @unique
-  value     String
-  updatedAt DateTime @updatedAt
-
-  @@index([key])
-}
-
-model Notification {
-  id        String               @id @default(cuid())
-  userId    String               // who receives it (admin user)
-  type      NotificationType
-  priority  NotificationPriority @default(MEDIUM)
-
-  title     String
-  message   String
-  link      String?
-  read      Boolean              @default(false)
-  readAt    DateTime?
-  metadata  Json?
-
-  createdAt DateTime             @default(now())
-
-  @@index([userId])
-  @@index([read])
-  @@index([createdAt])
-  @@index([type])
 }
