@@ -2,6 +2,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { formatZARFromCents } from "@/lib/money";
 
 interface ViewModeDisplayProps {
   label: string;
