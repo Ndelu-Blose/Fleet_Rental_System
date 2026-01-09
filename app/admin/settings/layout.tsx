@@ -33,16 +33,16 @@ export default async function SettingsLayout({ children }: { children: React.Rea
       </Breadcrumb>
 
       {/* Settings Context Bar */}
-      <div className="bg-muted/50 border rounded-lg px-4 py-3 flex items-start gap-3">
-        <SettingsIcon className="h-5 w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+      <div className="bg-muted/50 border rounded-lg px-3 py-2 md:px-4 md:py-3 flex items-start gap-2 md:gap-3">
+        <SettingsIcon className="h-4 w-4 md:h-5 md:w-5 text-muted-foreground mt-0.5 flex-shrink-0" />
         <div className="flex-1 min-w-0">
-          <h1 className="text-xl font-semibold flex items-center gap-2">
+          <h1 className="text-lg md:text-xl font-semibold flex items-center gap-2">
             <span>⚙️ Settings</span>
           </h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Configure how your fleet system works (pricing, payments, onboarding, notifications)
+          <p className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1">
+            Configure how your fleet system works
           </p>
-          <p className="text-xs text-muted-foreground mt-2 italic">
+          <p className="hidden md:block text-xs text-muted-foreground mt-2 italic">
             These settings control system behaviour. They do not modify existing records.
           </p>
         </div>

@@ -1,10 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { Building2, CreditCard, Bell, FileText, UserCheck, Settings as SettingsIcon, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type TabConfig = {
   href: string;
@@ -72,7 +73,11 @@ const allTabs = [...configTabs, ...adminTabs];
 
 export function TabNav() {
   const pathname = usePathname();
+  const router = useRouter();
   const activeTab = allTabs.find((tab) => pathname === tab.href);
+  
+  const activeConfigTab = configTabs.find((tab) => pathname === tab.href);
+  const activeAdminTab = adminTabs.find((tab) => pathname === tab.href);
 
   return (
     <div className="space-y-4">
@@ -83,8 +88,49 @@ export function TabNav() {
             Core Configuration
           </h3>
         </div>
-        <div className="border-b">
-          <nav className="flex gap-4 overflow-x-auto">
+        
+        {/* Mobile: Dropdown Selector */}
+        <div className="md:hidden mb-4">
+          <Select
+            value={activeConfigTab?.href || ""}
+            onValueChange={(value) => router.push(value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose section">
+                {activeConfigTab ? (
+                  <div className="flex items-center gap-2">
+                    <activeConfigTab.icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{activeConfigTab.label}</span>
+                  </div>
+                ) : (
+                  "Choose section"
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {configTabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <SelectItem key={tab.href} value={tab.href}>
+                    <div className="flex items-center gap-2 w-full">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1">{tab.label}</span>
+                      {tab.badge === "required" && (
+                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 border-primary/30 text-primary shrink-0">
+                          Required
+                        </Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Desktop: Horizontal Tabs */}
+        <div className="hidden md:block border-b">
+          <nav className="flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {configTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = pathname === tab.href;
@@ -125,8 +171,49 @@ export function TabNav() {
             Administration & Control
           </h3>
         </div>
-        <div className="border-b border-dashed">
-          <nav className="flex gap-4 overflow-x-auto">
+
+        {/* Mobile: Dropdown Selector */}
+        <div className="md:hidden mb-4">
+          <Select
+            value={activeAdminTab?.href || ""}
+            onValueChange={(value) => router.push(value)}
+          >
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Choose section">
+                {activeAdminTab ? (
+                  <div className="flex items-center gap-2">
+                    <activeAdminTab.icon className="h-4 w-4 shrink-0" />
+                    <span className="truncate">{activeAdminTab.label}</span>
+                  </div>
+                ) : (
+                  "Choose section"
+                )}
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              {adminTabs.map((tab) => {
+                const Icon = tab.icon;
+                return (
+                  <SelectItem key={tab.href} value={tab.href}>
+                    <div className="flex items-center gap-2 w-full">
+                      <Icon className="h-4 w-4 shrink-0" />
+                      <span className="flex-1">{tab.label}</span>
+                      {tab.badge === "advanced" && (
+                        <Badge variant="outline" className="text-xs px-1.5 py-0 h-4 text-muted-foreground shrink-0">
+                          Advanced
+                        </Badge>
+                      )}
+                    </div>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Desktop: Horizontal Tabs */}
+        <div className="hidden md:block border-b border-dashed">
+          <nav className="flex gap-4 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {adminTabs.map((tab) => {
               const Icon = tab.icon;
               const isActive = pathname === tab.href;
