@@ -3,13 +3,16 @@ import KpiCards from "@/components/admin/dashboard/KpiCards";
 import ActionRequired from "@/components/admin/dashboard/ActionRequired";
 import QuickActions from "@/components/admin/dashboard/QuickActions";
 import EmptyState from "@/components/admin/dashboard/EmptyState";
-import { SetupChecklist } from "@/components/admin/SetupChecklist";
+import { SetupProgressCard } from "@/components/admin/dashboard/SetupProgressCard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Car, Users, FileCheck, AlertTriangle, Wrench } from "lucide-react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { formatZARFromCents } from "@/lib/money";
+import { prisma } from "@/lib/prisma";
+import { getSetting } from "@/lib/settings";
+import { ContractStatus, VerificationStatus, VehicleStatus } from "@prisma/client";
 
 // Timeout wrapper to prevent hanging
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -24,6 +27,162 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 type Props = {
   searchParams?: Promise<{ range?: "all" | "month" | "week" }>;
 };
+
+type StepState = "DONE" | "ACTION" | "WAITING" | "LOCKED"
+
+type Step = {
+  id: string
+  label: string
+  description?: string
+  completed: boolean
+  state: StepState
+  hint?: string
+  actionLabel?: string
+  actionHref?: string
+}
+
+function computeState(args: {
+  completed: boolean
+  canDoNow: boolean
+  waiting?: boolean
+}): StepState {
+  if (args.completed) return "DONE"
+  if (!args.canDoNow) return "LOCKED"
+  if (args.waiting) return "WAITING"
+  return "ACTION"
+}
+
+async function getReadiness(): Promise<{ checklist: Step[] }> {
+  try {
+    const checklist: Step[] = []
+
+    const companyName = await getSetting("company.name", "")
+    const companyEmail = await getSetting("company.email", "")
+    const paymentMethod = await getSetting("payments.method", "")
+
+    const driversCount = await prisma.driverProfile.count()
+    const verifiedDriversCount = await prisma.driverProfile.count({
+      where: { verificationStatus: VerificationStatus.VERIFIED },
+    })
+    const vehiclesCount = await prisma.vehicle.count()
+    const contractsCount = await prisma.rentalContract.count()
+    const signedContractsCount = await prisma.rentalContract.count({
+      where: { status: { in: [ContractStatus.SIGNED_BY_DRIVER, ContractStatus.ACTIVE] } },
+    })
+    const activeContractsCount = await prisma.rentalContract.count({
+      where: { status: ContractStatus.ACTIVE },
+    })
+    const assignedVehiclesCount = await prisma.vehicle.count({
+      where: { status: VehicleStatus.ASSIGNED },
+    })
+
+    checklist.push({
+      id: "company",
+      label: "Company profile",
+      description: "Add your business name and email.",
+      completed: !!(companyName && companyEmail),
+      state: computeState({ completed: !!(companyName && companyEmail), canDoNow: true }),
+      actionLabel: "Complete profile",
+      actionHref: "/admin/settings/company",
+    })
+
+    checklist.push({
+      id: "payments",
+      label: "Payment method",
+      description: "Choose how drivers will pay.",
+      completed: !!paymentMethod,
+      state: computeState({ completed: !!paymentMethod, canDoNow: true }),
+      actionLabel: "Set up payments",
+      actionHref: "/admin/settings/payments",
+    })
+
+    checklist.push({
+      id: "drivers",
+      label: "Add a driver",
+      description: "Create at least one driver profile.",
+      completed: driversCount > 0,
+      state: computeState({ completed: driversCount > 0, canDoNow: true }),
+      actionLabel: "Add driver",
+      actionHref: "/admin/drivers",
+    })
+
+    checklist.push({
+      id: "verified",
+      label: "Verify a driver",
+      description: "Approve driver documents.",
+      completed: verifiedDriversCount > 0,
+      state: computeState({ completed: verifiedDriversCount > 0, canDoNow: driversCount > 0, waiting: false }),
+      hint: driversCount === 0 ? "Add a driver first." : undefined,
+      actionLabel: "Verify drivers",
+      actionHref: "/admin/verification",
+    })
+
+    checklist.push({
+      id: "vehicles",
+      label: "Add a vehicle",
+      description: "Create at least one vehicle.",
+      completed: vehiclesCount > 0,
+      state: computeState({ completed: vehiclesCount > 0, canDoNow: true }),
+      actionLabel: "Add vehicle",
+      actionHref: "/admin/vehicles",
+    })
+
+    checklist.push({
+      id: "contracts",
+      label: "Create a contract",
+      description: "Assign a vehicle to a verified driver.",
+      completed: contractsCount > 0,
+      state: computeState({ completed: contractsCount > 0, canDoNow: verifiedDriversCount > 0 && vehiclesCount > 0 }),
+      hint: verifiedDriversCount === 0 && vehiclesCount === 0 
+        ? "Verify a driver and add a vehicle first."
+        : verifiedDriversCount === 0 
+        ? "Verify a driver first."
+        : vehiclesCount === 0
+        ? "Add a vehicle first."
+        : undefined,
+      actionLabel: "Create contract",
+      actionHref: "/admin/contracts",
+    })
+
+    checklist.push({
+      id: "signed",
+      label: "Send contract to driver",
+      description: "Send the contract for driver signing.",
+      completed: signedContractsCount > 0,
+      state: computeState({ completed: signedContractsCount > 0, canDoNow: contractsCount > 0, waiting: false }),
+      hint: contractsCount === 0 ? "Create a contract first." : undefined,
+      actionLabel: "Open contracts",
+      actionHref: "/admin/contracts",
+    })
+
+    checklist.push({
+      id: "active",
+      label: "Start a rental",
+      description: "Activate the contract when ready.",
+      completed: activeContractsCount > 0,
+      state: computeState({ completed: activeContractsCount > 0, canDoNow: signedContractsCount > 0, waiting: false }),
+      hint: signedContractsCount === 0 ? "Waiting for driver to sign the contract." : undefined,
+      actionLabel: "Activate contract",
+      actionHref: "/admin/contracts",
+    })
+
+    checklist.push({
+      id: "assigned",
+      label: "Give a vehicle to a driver",
+      description: "Mark vehicle as assigned after activation.",
+      completed: assignedVehiclesCount > 0,
+      state: computeState({ completed: assignedVehiclesCount > 0, canDoNow: activeContractsCount > 0, waiting: false }),
+      hint: activeContractsCount === 0 ? "Start a rental first." : undefined,
+      actionLabel: "Assign vehicle",
+      actionHref: "/admin/vehicles",
+    })
+
+    return { checklist }
+  } catch (error) {
+    console.error("[Readiness] Failed to fetch:", error)
+    return { checklist: [] }
+  }
+}
 
 export default async function AdminDashboardPage({ searchParams }: Props) {
   const sp = await searchParams;
@@ -127,7 +286,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
         </Card>
       )}
 
-      <SetupChecklist />
+      <SetupProgressCard steps={(await getReadiness()).checklist} />
 
       <KpiCards data={data} />
 

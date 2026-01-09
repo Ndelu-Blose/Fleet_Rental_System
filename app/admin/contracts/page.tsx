@@ -391,7 +391,6 @@ export default function AdminContractsPage() {
 
                   <div className="flex items-center gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
-                      <DollarSign className="h-3 w-3" />
                       {formatZARFromCents(contract.feeAmountCents)} {contract.frequency.toLowerCase()}
                     </div>
                     <div className="flex items-center gap-1">

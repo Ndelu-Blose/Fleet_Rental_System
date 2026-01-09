@@ -121,7 +121,11 @@ function rangeStart(range: DashboardRange): Date | null {
  * All queries run in parallel for maximum performance
  */
 export async function getAdminDashboardData(range: DashboardRange): Promise<AdminDashboardData> {
-  console.time("dashboard:data");
+  // Use unique timestamp to avoid duplicate label warnings in React strict mode
+  const timerId = `dashboard:data:${Date.now()}`;
+  const parallelTimerId = `dashboard:parallel-queries:${Date.now()}`;
+  
+  console.time(timerId);
   const start = rangeStart(range);
   const now = new Date();
 
@@ -138,7 +142,7 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
   // ---- MAIN PARALLEL QUERY BATCH ----
   // All independent queries run simultaneously
   try {
-    console.time("dashboard:parallel-queries");
+    console.time(parallelTimerId);
     const [
       // Payment aggregates (using aggregate instead of fetching all)
       revenueResult,
@@ -407,7 +411,7 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
         5000
       ).catch(() => []),
     ]);
-    console.timeEnd("dashboard:parallel-queries");
+    console.timeEnd(parallelTimerId);
 
     // Process results
     const totalRevenue = revenueResult._sum.amountCents || 0;
@@ -552,7 +556,7 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
       },
     }));
 
-    console.timeEnd("dashboard:data");
+    console.timeEnd(timerId);
 
     return {
       range,
@@ -600,7 +604,12 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
     };
   } catch (error) {
     console.error("[Dashboard] Failed to load:", error);
-    console.timeEnd("dashboard:data");
+    // Only end timer if it was started (safe cleanup)
+    try {
+      console.timeEnd(timerId);
+    } catch {
+      // Timer might not exist if error occurred very early
+    }
     // Return safe defaults
     return {
       range,

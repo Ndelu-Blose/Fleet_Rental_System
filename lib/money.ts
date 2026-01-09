@@ -5,12 +5,15 @@
  */
 export function formatZAR(amount: number): string {
   const safe = Number.isFinite(amount) ? amount : 0;
-  return new Intl.NumberFormat("en-ZA", {
-    style: "currency",
-    currency: "ZAR",
+  // Use en-US locale for consistent formatting (comma thousands, dot decimal)
+  // Then manually replace any currency symbol with "R"
+  const formatted = new Intl.NumberFormat("en-US", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(safe);
+  
+  // Return "R " prefix with the formatted number
+  return `R ${formatted}`;
 }
 
 /**

@@ -2,8 +2,8 @@ import type React from "react"
 import { requireAdmin } from "@/lib/permissions"
 import Link from "next/link"
 import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus, UserCircle, Settings } from "lucide-react"
-import { NotificationsDropdown } from "./_components/notifications-dropdown"
 import { SignOutButton } from "./_components/sign-out-button"
+import { NotificationsDropdownWrapper } from "./_components/notifications-dropdown-wrapper"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin()
@@ -21,7 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
               <h1 className="text-xl font-bold">FleetHub Admin</h1>
             </div>
             <div className="flex items-center gap-4">
-              <NotificationsDropdown />
+              <NotificationsDropdownWrapper />
               <span className="text-sm text-muted-foreground">{displayEmail}</span>
               <SignOutButton />
             </div>

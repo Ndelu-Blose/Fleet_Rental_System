@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useParams } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import Link from "next/link"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -31,6 +31,7 @@ type Contract = {
 }
 
 export default function PreviewContractPage() {
+  const router = useRouter()
   const params = useParams()
   const contractId = params.contractId as string
 
@@ -64,15 +65,21 @@ export default function PreviewContractPage() {
     )
   }
 
+  const handleBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) {
+      router.back()
+    } else {
+      router.push("/admin/contracts")
+    }
+  }
+
   if (!contract) {
     return (
       <div className="space-y-6">
-        <Link href="/admin/contracts">
-          <Button variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Contracts
-          </Button>
-        </Link>
+        <Button variant="outline" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Contracts
+        </Button>
         <Card>
           <CardContent className="pt-6">
             <p className="text-muted-foreground">Contract not found</p>
@@ -85,12 +92,10 @@ export default function PreviewContractPage() {
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       <div className="flex items-center gap-4">
-        <Link href="/admin/contracts">
-          <Button variant="outline">
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Contracts
-          </Button>
-        </Link>
+        <Button variant="outline" onClick={handleBack}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Back to Contracts
+        </Button>
         <div>
           <h1 className="text-3xl font-bold">Contract Preview</h1>
           <p className="text-muted-foreground mt-1">Read-only preview of contract details</p>
