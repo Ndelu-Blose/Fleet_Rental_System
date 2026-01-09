@@ -11,6 +11,11 @@ export const metadata: Metadata = {
   title: 'FleetHub',
   description: 'Professional fleet rental management system',
   generator: 'FleetHub',
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 5,
+  },
   icons: {
     icon: [
       {
@@ -36,11 +41,9 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="overflow-x-hidden">
+    <html lang="en">
       <body className={`font-sans antialiased min-h-screen w-full overflow-x-hidden`}>
-        <div className="min-h-screen w-full overflow-x-hidden">
-          {children}
-        </div>
+        {children}
         <Toaster />
         <Analytics />
       </body>

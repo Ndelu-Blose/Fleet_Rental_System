@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet"
 import { Badge } from "@/components/ui/badge"
 import { Loader2, Plus, Calendar, DollarSign, FileText, Download, Edit, Trash2, Copy, Eye, X, Pause, RotateCcw, CheckCircle2, AlertCircle, MoreVertical } from "lucide-react"
 import { toast } from "sonner"
@@ -340,13 +341,13 @@ export default function AdminContractsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden pb-24">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold">Rental Contracts</h1>
           <p className="text-muted-foreground mt-1">Assign vehicles to verified drivers</p>
         </div>
-        <Button onClick={() => setShowDialog(true)}>
+        <Button onClick={() => setShowDialog(true)} className="shrink-0">
           <Plus className="mr-2 h-4 w-4" />
           Create Contract
         </Button>
@@ -371,35 +372,35 @@ export default function AdminContractsPage() {
         </Card>
       )}
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 w-full max-w-full">
         {(showActiveOnly ? contracts.filter((c) => c.status === "ACTIVE") : contracts).map((contract) => (
-          <Card key={contract.id}>
+          <Card key={contract.id} className="min-w-0 overflow-hidden">
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="space-y-3 flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className={`text-xs font-medium px-2 py-1 rounded ${getStatusColor(contract.status)}`}>
+              <div className="flex items-start justify-between gap-3 min-w-0">
+                <div className="space-y-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-2 sm:gap-3 flex-wrap">
+                    <span className={`text-xs font-medium px-2 py-1 rounded shrink-0 ${getStatusColor(contract.status)}`}>
                       {contract.status === ContractStatus.DRAFT ? "Draft (editable)" :
                        contract.status === ContractStatus.SENT_TO_DRIVER || contract.status === "SENT" ? "Sent to driver (awaiting signature)" :
                        contract.status === ContractStatus.ACTIVE ? "Active" :
                        contract.status}
                     </span>
-                    <h3 className="font-medium">
+                    <h3 className="font-medium truncate min-w-0">
                       {contract.driver.user.name || contract.driver.user.email} → {contract.vehicle.reg}
                     </h3>
                   </div>
 
-                  <div className="flex items-center gap-6 text-sm text-muted-foreground">
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       {formatZARFromCents(contract.feeAmountCents)} {contract.frequency.toLowerCase()}
                     </div>
                     <div className="flex items-center gap-1">
-                      <Calendar className="h-3 w-3" />
+                      <Calendar className="h-3 w-3 shrink-0" />
                       Started: {new Date(contract.startDate).toLocaleDateString()}
                     </div>
                     {contract.endDate && (
                       <div className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
+                        <Calendar className="h-3 w-3 shrink-0" />
                         Ended: {new Date(contract.endDate).toLocaleDateString()}
                       </div>
                     )}
@@ -455,7 +456,7 @@ export default function AdminContractsPage() {
                   </div>
                 </div>
 
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-2 flex-wrap shrink-0">
                   {(() => {
                     const status = contract.status
                     const isDraft = status === ContractStatus.DRAFT
@@ -466,68 +467,129 @@ export default function AdminContractsPage() {
                     
                     // DRAFT actions
                     if (isDraft) {
+                      const handleSend = async () => {
+                        try {
+                          const res = await fetch(`/api/admin/contracts/${contract.id}/send`, {
+                            method: "POST",
+                          })
+                          const data = await res.json()
+                          if (res.ok) {
+                            toast.success("Contract sent to driver!")
+                            await fetchContracts()
+                          } else {
+                            toast.error(data.error || "Failed to send contract")
+                          }
+                        } catch (error) {
+                          toast.error("Failed to send contract")
+                        }
+                      }
+
                       return (
                         <>
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={`/admin/contracts/${contract.id}/edit`}>
-                              <Edit className="h-4 w-4 mr-2" />
-                              Edit
-                            </Link>
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handlePreviewContract(contract.id)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            Preview
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDuplicateContract(contract)}
-                          >
-                            <Copy className="h-4 w-4 mr-2" />
-                            Duplicate
-                          </Button>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={async () => {
-                              try {
-                                const res = await fetch(`/api/admin/contracts/${contract.id}/send`, {
-                                  method: "POST",
-                                })
-                                const data = await res.json()
-                                if (res.ok) {
-                                  toast.success("Contract sent to driver!")
-                                  await fetchContracts()
-                                } else {
-                                  toast.error(data.error || "Failed to send contract")
-                                }
-                              } catch (error) {
-                                toast.error("Failed to send contract")
-                              }
-                            }}
-                          >
-                            Send to Driver
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" sideOffset={8}>
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => handleDeleteDraft(contract.id)}
-                              >
-                                <Trash2 className="h-4 w-4 mr-2" />
-                                Delete Draft
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {/* Mobile: Bottom Sheet Actions */}
+                          <div className="md:hidden">
+                            <Sheet>
+                              <SheetTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4 mr-2" />
+                                  Actions
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent side="bottom" className="rounded-t-2xl">
+                                <SheetHeader>
+                                  <SheetTitle>Contract Actions</SheetTitle>
+                                </SheetHeader>
+                                <div className="mt-4 grid gap-2">
+                                  <Button asChild variant="outline" className="w-full justify-start">
+                                    <Link href={`/admin/contracts/${contract.id}/edit`}>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Edit
+                                    </Link>
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() => handlePreviewContract(contract.id)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    Preview
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() => handleDuplicateContract(contract)}
+                                  >
+                                    <Copy className="h-4 w-4 mr-2" />
+                                    Duplicate
+                                  </Button>
+                                  <Button
+                                    variant="default"
+                                    className="w-full justify-start"
+                                    onClick={handleSend}
+                                  >
+                                    Send to Driver
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-destructive hover:text-destructive"
+                                    onClick={() => handleDeleteDraft(contract.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4 mr-2" />
+                                    Delete Draft
+                                  </Button>
+                                </div>
+                              </SheetContent>
+                            </Sheet>
+                          </div>
+
+                          {/* Desktop: Inline Buttons */}
+                          <div className="hidden md:flex gap-2">
+                            <Button asChild variant="outline" size="sm">
+                              <Link href={`/admin/contracts/${contract.id}/edit`}>
+                                <Edit className="h-4 w-4 mr-2" />
+                                Edit
+                              </Link>
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePreviewContract(contract.id)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              Preview
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDuplicateContract(contract)}
+                            >
+                              <Copy className="h-4 w-4 mr-2" />
+                              Duplicate
+                            </Button>
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={handleSend}
+                            >
+                              Send to Driver
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" sideOffset={8}>
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={() => handleDeleteDraft(contract.id)}
+                                >
+                                  <Trash2 className="h-4 w-4 mr-2" />
+                                  Delete Draft
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </>
                       )
                     }
@@ -536,81 +598,157 @@ export default function AdminContractsPage() {
                     if (isSent) {
                       return (
                         <>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handlePreviewContract(contract.id)}
-                          >
-                            <Eye className="h-4 w-4 mr-2" />
-                            View
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" sideOffset={8}>
-                              <DropdownMenuItem onClick={() => handleRejectContract(contract.id)}>
-                                <X className="h-4 w-4 mr-2" />
-                                Reject Contract
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {/* Mobile: Bottom Sheet */}
+                          <div className="md:hidden">
+                            <Sheet>
+                              <SheetTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4 mr-2" />
+                                  Actions
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent side="bottom" className="rounded-t-2xl">
+                                <SheetHeader>
+                                  <SheetTitle>Contract Actions</SheetTitle>
+                                </SheetHeader>
+                                <div className="mt-4 grid gap-2">
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() => handlePreviewContract(contract.id)}
+                                  >
+                                    <Eye className="h-4 w-4 mr-2" />
+                                    View
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-destructive hover:text-destructive"
+                                    onClick={() => handleRejectContract(contract.id)}
+                                  >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Reject Contract
+                                  </Button>
+                                </div>
+                              </SheetContent>
+                            </Sheet>
+                          </div>
+                          {/* Desktop: Inline Buttons */}
+                          <div className="hidden md:flex gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handlePreviewContract(contract.id)}
+                            >
+                              <Eye className="h-4 w-4 mr-2" />
+                              View
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" sideOffset={8}>
+                                <DropdownMenuItem onClick={() => handleRejectContract(contract.id)}>
+                                  <X className="h-4 w-4 mr-2" />
+                                  Reject Contract
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </>
                       )
                     }
                     
                     // SIGNED BY DRIVER actions
                     if (isSigned) {
+                      const handleActivate = async () => {
+                        try {
+                          const activateRes = await fetch(`/api/admin/contracts/${contract.id}/activate`, {
+                            method: "POST",
+                          })
+                          if (!activateRes.ok) {
+                            const data = await activateRes.json()
+                            toast.error(data.error || "Failed to activate contract")
+                            return
+                          }
+                          
+                          const pdfRes = await fetch(`/api/contracts/${contract.id}/generate-signed-pdf`, {
+                            method: "POST",
+                          })
+                          const pdfData = await pdfRes.json()
+                          if (pdfRes.ok) {
+                            toast.success("Contract activated and PDF generated!")
+                            await fetchContracts()
+                          } else {
+                            toast.error(pdfData.error || "Contract activated but PDF generation failed")
+                            await fetchContracts()
+                          }
+                        } catch (error) {
+                          toast.error("Failed to activate contract")
+                        }
+                      }
+
                       return (
                         <>
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={async () => {
-                              try {
-                                const activateRes = await fetch(`/api/admin/contracts/${contract.id}/activate`, {
-                                  method: "POST",
-                                })
-                                if (!activateRes.ok) {
-                                  const data = await activateRes.json()
-                                  toast.error(data.error || "Failed to activate contract")
-                                  return
-                                }
-                                
-                                const pdfRes = await fetch(`/api/contracts/${contract.id}/generate-signed-pdf`, {
-                                  method: "POST",
-                                })
-                                const pdfData = await pdfRes.json()
-                                if (pdfRes.ok) {
-                                  toast.success("Contract activated and PDF generated!")
-                                  await fetchContracts()
-                                } else {
-                                  toast.error(pdfData.error || "Contract activated but PDF generation failed")
-                                  await fetchContracts()
-                                }
-                              } catch (error) {
-                                toast.error("Failed to activate contract")
-                              }
-                            }}
-                          >
-                            <CheckCircle2 className="h-4 w-4 mr-2" />
-                            Activate Contract
-                          </Button>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" sideOffset={8}>
-                              <DropdownMenuItem onClick={() => handleRejectContract(contract.id)}>
-                                <X className="h-4 w-4 mr-2" />
-                                Reject Before Activation
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                          {/* Mobile: Bottom Sheet */}
+                          <div className="md:hidden">
+                            <Sheet>
+                              <SheetTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4 mr-2" />
+                                  Actions
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent side="bottom" className="rounded-t-2xl">
+                                <SheetHeader>
+                                  <SheetTitle>Contract Actions</SheetTitle>
+                                </SheetHeader>
+                                <div className="mt-4 grid gap-2">
+                                  <Button
+                                    variant="default"
+                                    className="w-full justify-start"
+                                    onClick={handleActivate}
+                                  >
+                                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                                    Activate Contract
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-destructive hover:text-destructive"
+                                    onClick={() => handleRejectContract(contract.id)}
+                                  >
+                                    <X className="h-4 w-4 mr-2" />
+                                    Reject Before Activation
+                                  </Button>
+                                </div>
+                              </SheetContent>
+                            </Sheet>
+                          </div>
+                          {/* Desktop: Inline Buttons */}
+                          <div className="hidden md:flex gap-2">
+                            <Button
+                              variant="default"
+                              size="sm"
+                              onClick={handleActivate}
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-2" />
+                              Activate Contract
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" sideOffset={8}>
+                                <DropdownMenuItem onClick={() => handleRejectContract(contract.id)}>
+                                  <X className="h-4 w-4 mr-2" />
+                                  Reject Before Activation
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </>
                       )
                     }
@@ -619,48 +757,109 @@ export default function AdminContractsPage() {
                     if (isActive) {
                       return (
                         <>
-                          {contract.signedPdfUrl && (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
-                            >
-                              <Download className="h-4 w-4 mr-2" />
-                              Download PDF
-                            </Button>
-                          )}
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <MoreVertical className="h-4 w-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" sideOffset={8}>
-                              <DropdownMenuItem asChild>
-                                <Link href={`/admin/contracts/${contract.id}/edit`}>
-                                  <Edit className="h-4 w-4 mr-2" />
-                                  Modify Terms
-                                </Link>
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => {/* TODO: Reassign vehicle */}}>
-                                <RotateCcw className="h-4 w-4 mr-2" />
-                                Reassign Vehicle
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem onClick={() => handleSuspendContract(contract.id)}>
-                                <Pause className="h-4 w-4 mr-2" />
-                                Suspend Contract
-                              </DropdownMenuItem>
-                              <DropdownMenuSeparator />
-                              <DropdownMenuItem
-                                className="text-red-600"
-                                onClick={() => handleEndContract(contract.id)}
+                          {/* Mobile: Bottom Sheet */}
+                          <div className="md:hidden">
+                            <Sheet>
+                              <SheetTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4 mr-2" />
+                                  Actions
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent side="bottom" className="rounded-t-2xl">
+                                <SheetHeader>
+                                  <SheetTitle>Contract Actions</SheetTitle>
+                                </SheetHeader>
+                                <div className="mt-4 grid gap-2">
+                                  {contract.signedPdfUrl && (
+                                    <Button
+                                      variant="outline"
+                                      className="w-full justify-start"
+                                      onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
+                                    >
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Download PDF
+                                    </Button>
+                                  )}
+                                  <Button asChild variant="outline" className="w-full justify-start">
+                                    <Link href={`/admin/contracts/${contract.id}/edit`}>
+                                      <Edit className="h-4 w-4 mr-2" />
+                                      Modify Terms
+                                    </Link>
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() => {/* TODO: Reassign vehicle */}}
+                                  >
+                                    <RotateCcw className="h-4 w-4 mr-2" />
+                                    Reassign Vehicle
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() => handleSuspendContract(contract.id)}
+                                  >
+                                    <Pause className="h-4 w-4 mr-2" />
+                                    Suspend Contract
+                                  </Button>
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start text-destructive hover:text-destructive"
+                                    onClick={() => handleEndContract(contract.id)}
+                                  >
+                                    <X className="h-4 w-4 mr-2" />
+                                    End Contract
+                                  </Button>
+                                </div>
+                              </SheetContent>
+                            </Sheet>
+                          </div>
+                          {/* Desktop: Inline Buttons */}
+                          <div className="hidden md:flex gap-2">
+                            {contract.signedPdfUrl && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
                               >
-                                <X className="h-4 w-4 mr-2" />
-                                End Contract
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
+                                <Download className="h-4 w-4 mr-2" />
+                                Download PDF
+                              </Button>
+                            )}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" sideOffset={8}>
+                                <DropdownMenuItem asChild>
+                                  <Link href={`/admin/contracts/${contract.id}/edit`}>
+                                    <Edit className="h-4 w-4 mr-2" />
+                                    Modify Terms
+                                  </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => {/* TODO: Reassign vehicle */}}>
+                                  <RotateCcw className="h-4 w-4 mr-2" />
+                                  Reassign Vehicle
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleSuspendContract(contract.id)}>
+                                  <Pause className="h-4 w-4 mr-2" />
+                                  Suspend Contract
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-600"
+                                  onClick={() => handleEndContract(contract.id)}
+                                >
+                                  <X className="h-4 w-4 mr-2" />
+                                  End Contract
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
                         </>
                       )
                     }
@@ -669,6 +868,100 @@ export default function AdminContractsPage() {
                     if (isEnded) {
                       return (
                         <>
+                          {/* Mobile: Bottom Sheet */}
+                          <div className="md:hidden">
+                            <Sheet>
+                              <SheetTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4 mr-2" />
+                                  Actions
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent side="bottom" className="rounded-t-2xl">
+                                <SheetHeader>
+                                  <SheetTitle>Contract Actions</SheetTitle>
+                                </SheetHeader>
+                                <div className="mt-4 grid gap-2">
+                                  {contract.signedPdfUrl && (
+                                    <Button
+                                      variant="outline"
+                                      className="w-full justify-start"
+                                      onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
+                                    >
+                                      <Download className="h-4 w-4 mr-2" />
+                                      Download PDF
+                                    </Button>
+                                  )}
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() => {/* TODO: View payments */}}
+                                  >
+                                    <FileText className="h-4 w-4 mr-2" />
+                                    View Payments
+                                  </Button>
+                                </div>
+                              </SheetContent>
+                            </Sheet>
+                          </div>
+                          {/* Desktop: Inline Buttons */}
+                          <div className="hidden md:flex gap-2">
+                            {contract.signedPdfUrl && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
+                              >
+                                <Download className="h-4 w-4 mr-2" />
+                                Download PDF
+                              </Button>
+                            )}
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {/* TODO: View payments */}}
+                            >
+                              <FileText className="h-4 w-4 mr-2" />
+                              View Payments
+                            </Button>
+                          </div>
+                        </>
+                      )
+                    }
+                    
+                    // Default fallback
+                    return (
+                      <>
+                        {/* Mobile: Bottom Sheet */}
+                        {contract.signedPdfUrl && (
+                          <div className="md:hidden">
+                            <Sheet>
+                              <SheetTrigger asChild>
+                                <Button variant="outline" size="sm">
+                                  <MoreVertical className="h-4 w-4 mr-2" />
+                                  Actions
+                                </Button>
+                              </SheetTrigger>
+                              <SheetContent side="bottom" className="rounded-t-2xl">
+                                <SheetHeader>
+                                  <SheetTitle>Contract Actions</SheetTitle>
+                                </SheetHeader>
+                                <div className="mt-4 grid gap-2">
+                                  <Button
+                                    variant="outline"
+                                    className="w-full justify-start"
+                                    onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
+                                  >
+                                    <Download className="h-4 w-4 mr-2" />
+                                    Download PDF
+                                  </Button>
+                                </div>
+                              </SheetContent>
+                            </Sheet>
+                          </div>
+                        )}
+                        {/* Desktop: Inline Buttons */}
+                        <div className="hidden md:flex gap-2">
                           {contract.signedPdfUrl && (
                             <Button
                               variant="outline"
@@ -679,31 +972,7 @@ export default function AdminContractsPage() {
                               Download PDF
                             </Button>
                           )}
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {/* TODO: View payments */}}
-                          >
-                            <FileText className="h-4 w-4 mr-2" />
-                            View Payments
-                          </Button>
-                        </>
-                      )
-                    }
-                    
-                    // Default fallback
-                    return (
-                      <>
-                        {contract.signedPdfUrl && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
-                          >
-                            <Download className="h-4 w-4 mr-2" />
-                            Download PDF
-                          </Button>
-                        )}
+                        </div>
                       </>
                     )
                   })()}

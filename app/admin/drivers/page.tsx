@@ -304,13 +304,13 @@ export default function AdminDriversPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden pb-24">
+      <div className="flex items-center justify-between gap-4">
+        <div className="min-w-0">
           <h1 className="text-3xl font-bold">Drivers</h1>
           <p className="text-muted-foreground mt-1">Manage driver accounts</p>
         </div>
-        <Button onClick={() => setShowCreateDialog(true)}>
+        <Button onClick={() => setShowCreateDialog(true)} className="shrink-0">
           <UserPlus className="mr-2 h-4 w-4" />
           Add Driver
         </Button>
@@ -341,26 +341,26 @@ export default function AdminDriversPage() {
         </Select>
       </div>
 
-      <div className="grid gap-4">
+      <div className="grid gap-4 w-full max-w-full">
         {filteredDrivers.map((driver) => (
-          <Card key={driver.id}>
+          <Card key={driver.id} className="min-w-0 overflow-hidden">
             <CardContent className="pt-6">
-              <div className="flex items-start justify-between">
-                <div className="flex-1 space-y-1">
-                  <h3 className="font-medium">{driver.user.name || "No name"}</h3>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Mail className="h-3 w-3" />
-                      {driver.user.email}
+              <div className="flex items-start justify-between gap-4 min-w-0">
+                <div className="flex-1 space-y-1 min-w-0">
+                  <h3 className="font-medium truncate">{driver.user.name || "No name"}</h3>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-4 text-sm text-muted-foreground min-w-0">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <Mail className="h-3 w-3 shrink-0" />
+                      <span className="truncate">{driver.user.email}</span>
                     </div>
                     {driver.user.phone && (
-                      <div className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
-                        {driver.user.phone}
+                      <div className="flex items-center gap-1 min-w-0">
+                        <Phone className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{driver.user.phone}</span>
                       </div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <span
                       className={`text-xs font-medium px-2 py-1 rounded ${getStatusColor(driver.verificationStatus)}`}
                     >
@@ -373,15 +373,26 @@ export default function AdminDriversPage() {
                       </span>
                     )}
                   </div>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    {driver.contracts.length > 0 ? (
+                  {/* Mobile: Show vehicle info */}
+                  {driver.contracts.length > 0 && (
+                    <div className="sm:hidden mt-2 pt-2 border-t">
                       <div className="text-sm">
                         <p className="font-medium">
                           {driver.contracts[0].vehicle.make} {driver.contracts[0].vehicle.model}
                         </p>
                         <p className="text-muted-foreground">{driver.contracts[0].vehicle.reg}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+                  <div className="text-right hidden sm:block">
+                    {driver.contracts.length > 0 ? (
+                      <div className="text-sm">
+                        <p className="font-medium truncate max-w-[150px]">
+                          {driver.contracts[0].vehicle.make} {driver.contracts[0].vehicle.model}
+                        </p>
+                        <p className="text-muted-foreground truncate">{driver.contracts[0].vehicle.reg}</p>
                       </div>
                     ) : (
                       <span className="text-sm text-muted-foreground">No vehicle assigned</span>
@@ -389,11 +400,11 @@ export default function AdminDriversPage() {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
+                      <Button variant="ghost" size="icon" className="shrink-0">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" sideOffset={8}>
                       <DropdownMenuItem
                         onClick={() => router.push(`/admin/drivers/${driver.id}`)}
                       >

@@ -70,8 +70,40 @@ function AdminVerificationContent() {
       
       // Check if response is ok
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }))
-        console.error("API error response:", errorData)
+        // Check if response has content before trying to parse JSON
+        const contentType = res.headers.get("content-type")
+        let errorMessage = `HTTP ${res.status}: ${res.statusText}`
+        
+        if (contentType?.includes("application/json")) {
+          try {
+            const text = await res.text()
+            if (text.trim()) {
+              const parsed = JSON.parse(text)
+              errorMessage = parsed.error || parsed.message || errorMessage
+            }
+          } catch (e) {
+            // If parsing fails, use default error message
+            console.error("Failed to parse error response:", e)
+          }
+        } else {
+          // Try to read as text if not JSON
+          try {
+            const text = await res.text()
+            if (text.trim()) {
+              errorMessage = text.trim()
+            }
+          } catch (e) {
+            // Ignore text reading errors
+          }
+        }
+        
+        // Only log if there's actual error content
+        if (errorMessage && errorMessage !== `HTTP ${res.status}: ${res.statusText}`) {
+          console.error("API error:", errorMessage)
+        } else if (res.status === 401 || res.status === 403) {
+          console.error("Authentication error: Please sign in again")
+        }
+        
         setDrivers([])
         setLoading(false)
         return
