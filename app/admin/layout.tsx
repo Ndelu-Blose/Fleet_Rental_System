@@ -1,6 +1,5 @@
 import type React from "react"
 import { requireAdmin } from "@/lib/permissions"
-import { prisma } from "@/lib/prisma"
 import Link from "next/link"
 import { LayoutDashboard, Users, Car, FileCheck, CreditCard, UserPlus, UserCircle, Settings } from "lucide-react"
 import { NotificationsDropdown } from "./_components/notifications-dropdown"
@@ -8,14 +7,9 @@ import { SignOutButton } from "./_components/sign-out-button"
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await requireAdmin()
-
-  // Fetch fresh email from database to ensure it's up-to-date after email changes
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    select: { email: true },
-  })
-
-  const displayEmail = user?.email || session.user.email
+  
+  // Use session email directly - it's already up-to-date from the JWT callback
+  const displayEmail = session.user.email
 
   return (
     <div className="min-h-screen bg-background">

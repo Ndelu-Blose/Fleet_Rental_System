@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/permissions"
 import { updateVehicleSchema } from "@/lib/validations/vehicle"
 
+export const runtime = "nodejs"
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     await requireAdmin()

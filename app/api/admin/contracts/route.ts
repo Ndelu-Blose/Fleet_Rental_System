@@ -8,6 +8,8 @@ import { createFirstPayment } from "@/lib/payments/generator"
 import { createNotification } from "@/lib/notifications"
 import { FeeFrequency, VehicleType, NotificationType, NotificationPriority } from "@prisma/client"
 
+export const runtime = "nodejs"
+
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin()

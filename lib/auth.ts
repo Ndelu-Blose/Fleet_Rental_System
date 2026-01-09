@@ -2,6 +2,7 @@ import NextAuth from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
+import { withTimeout } from "@/lib/server/timeout"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
@@ -186,7 +187,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
     async jwt({ token, user, trigger }) {
-      // runs on sign-in (user exists) and subsequent calls (user undefined)
+      // On initial sign-in, user is present, save the essentials once
       if (user) {
         console.log("[Auth] 🔑 JWT callback - storing user data:", {
           userId: user.id,
@@ -207,32 +208,31 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           role: token.role,
           email: token.email,
         })
+        return token
       }
 
-      // Refresh user data from database if:
-      // 1. Token is older than 5 minutes (to catch email changes)
-      // 2. Or explicitly triggered via update() call
-      const shouldRefresh = 
-        trigger === "update" || 
-        !token.lastRefreshed || 
-        Date.now() - (token.lastRefreshed as number) > 5 * 60 * 1000
-
-      if (shouldRefresh && token.sub) {
+      // Only refresh from DB when explicitly asked (via trigger === "update")
+      // This prevents DB calls on every request, making layouts much faster
+      if (trigger === "update" && token.sub) {
         try {
-          const dbUser = await prisma.user.findUnique({
-            where: { id: token.sub },
-            select: {
-              email: true,
-              name: true,
-              role: true,
-              isEmailVerified: true,
-              driverProfile: {
-                select: {
-                  id: true,
+          // Add timeout to prevent hanging
+          const dbUser = await withTimeout(
+            prisma.user.findUnique({
+              where: { id: token.sub },
+              select: {
+                email: true,
+                name: true,
+                role: true,
+                isEmailVerified: true,
+                driverProfile: {
+                  select: {
+                    id: true,
+                  },
                 },
               },
-            },
-          })
+            }),
+            5000 // 5 second timeout for token refresh
+          )
 
           if (dbUser) {
             token.email = dbUser.email

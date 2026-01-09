@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/permissions"
 import { getSettingInt } from "@/lib/settings"
 
+export const runtime = "nodejs"
+
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin()

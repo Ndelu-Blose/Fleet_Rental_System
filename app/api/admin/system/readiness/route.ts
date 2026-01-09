@@ -1,13 +1,14 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
 import { getSetting } from "@/lib/settings"
+import { ContractStatus, VerificationStatus, VehicleStatus } from "@prisma/client"
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     await requireAdmin()
 
-    const checklist = []
+    const checklist: any[] = []
 
     // 1. Company profile complete
     const companyName = await getSetting("company.name", "")
@@ -45,7 +46,7 @@ export async function GET(req: NextRequest) {
 
     // 4. At least 1 driver verified
     const verifiedDrivers = await prisma.driverProfile.findMany({
-      where: { verificationStatus: "VERIFIED" },
+      where: { verificationStatus: VerificationStatus.VERIFIED },
       select: { id: true },
     })
     checklist.push({
@@ -81,7 +82,7 @@ export async function GET(req: NextRequest) {
 
     // 7. At least 1 contract signed
     const signedContracts = await prisma.rentalContract.findMany({
-      where: { status: { in: ["SIGNED_BY_DRIVER", "ACTIVE"] } },
+      where: { status: { in: [ContractStatus.SIGNED_BY_DRIVER, ContractStatus.ACTIVE] } },
       select: { id: true },
     })
     checklist.push({
@@ -95,7 +96,7 @@ export async function GET(req: NextRequest) {
 
     // 8. At least 1 contract active
     const activeContracts = await prisma.rentalContract.findMany({
-      where: { status: "ACTIVE" },
+      where: { status: ContractStatus.ACTIVE },
       select: { id: true },
     })
     checklist.push({
@@ -109,7 +110,7 @@ export async function GET(req: NextRequest) {
 
     // 9. At least 1 vehicle assigned
     const assignedVehicles = await prisma.vehicle.findMany({
-      where: { status: "ASSIGNED" },
+      where: { status: VehicleStatus.ASSIGNED },
       select: { id: true },
     })
     checklist.push({
@@ -124,6 +125,9 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ checklist })
   } catch (error: any) {
     console.error("[Readiness] Error:", error)
-    return NextResponse.json({ error: error.message || "Failed to fetch checklist" }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch checklist" },
+      { status: 500 }
+    )
   }
 }

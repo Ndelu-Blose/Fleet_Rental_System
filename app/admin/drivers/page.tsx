@@ -83,24 +83,16 @@ export default function AdminDriversPage() {
   }, [])
 
   const fetchDrivers = async () => {
-    // #region agent log
-    const fetchStart = Date.now();
-    console.log("[DEBUG] Client: fetchDrivers start", { timestamp: fetchStart });
-    // #endregion
     try {
       const res = await fetch("/api/admin/drivers", { cache: "no-store" })
-      // #region agent log
-      console.log("[DEBUG] Client: fetch response received", { status: res.status, duration: Date.now() - fetchStart });
-      // #endregion
       const data = await res.json()
-      // #region agent log
-      console.log("[DEBUG] Client: fetchDrivers success", { hasData: !!data, isArray: Array.isArray(data), count: Array.isArray(data) ? data.length : 0 });
-      // #endregion
-      setDrivers(Array.isArray(data) ? data : data.drivers || [])
+      if (data.ok === false) {
+        console.error("API returned error:", data.error)
+        setDrivers([])
+      } else {
+        setDrivers(Array.isArray(data) ? data : data.drivers || [])
+      }
     } catch (error) {
-      // #region agent log
-      console.error("[DEBUG] Client: fetchDrivers error", { error: error instanceof Error ? error.message : String(error), duration: Date.now() - fetchStart });
-      // #endregion
       console.error("Failed to fetch drivers:", error)
       setDrivers([])
     } finally {

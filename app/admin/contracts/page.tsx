@@ -107,9 +107,12 @@ export default function AdminContractsPage() {
     try {
       const res = await fetch("/api/admin/drivers")
       const data = await res.json()
-      setDrivers(data.filter((d: Driver) => d.verificationStatus === "VERIFIED"))
+      // Handle API response structure: { ok: true, drivers: [...] } or just array
+      const driversList = data.ok === false ? [] : (Array.isArray(data) ? data : data.drivers || [])
+      setDrivers(driversList.filter((d: Driver) => d.verificationStatus === "VERIFIED"))
     } catch (error) {
       console.error("Failed to fetch drivers:", error)
+      setDrivers([])
     }
   }
 

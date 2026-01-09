@@ -1,8 +1,9 @@
 import { auth } from "@/lib/auth"
 import { redirect } from "next/navigation"
+import { withTimeout } from "@/lib/server/timeout"
 
 export async function requireAuth() {
-  const session = await auth()
+  const session = await withTimeout(auth(), 12000)
   if (!session?.user) {
     redirect("/login")
   }

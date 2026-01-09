@@ -3,10 +3,10 @@ import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/permissions"
 import { updateContractSchema } from "@/lib/validations/contract"
 
-export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ contractId: string }> }) {
   try {
     await requireAdmin()
-    const { id } = await params
+    const { contractId } = await params
     const body = await req.json()
 
     // Validate input
@@ -21,7 +21,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const { status, endDate } = validationResult.data
 
     const contract = await prisma.rentalContract.update({
-      where: { id },
+      where: { id: contractId },
       data: {
         status: status as any,
         endDate,

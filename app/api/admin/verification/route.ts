@@ -2,6 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { requireAdmin } from "@/lib/permissions"
 
+export const runtime = "nodejs"
+
 export async function GET(req: NextRequest) {
   try {
     await requireAdmin()

@@ -1,0 +1,200 @@
+{"location":"lib/prisma.ts:7","message":"Prisma client initialization start","data":{"hasExisting":false,"nodeEnv":"development","hasDbUrl":true,"hasDirectUrl":false},"timestamp":1767880091540,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880091548,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/prisma.ts:10","message":"Prisma client initialized","data":{"isNew":true},"timestamp":1767880091546,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880091693,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:255","message":"JWT callback: refresh failed","data":{"error":"Timeout after 3000ms"},"timestamp":1767880094702,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:10","message":"AdminLayout entry","data":{},"timestamp":1767880095602,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:14","message":"requireAdmin call start","data":{},"timestamp":1767880095604,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880095605,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880095607,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:35","message":"Dashboard page data fetch start","data":{"range":"all"},"timestamp":1767880095639,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:127","message":"getAdminDashboardData entry","data":{"range":"all"},"timestamp":1767880095642,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880095643,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880095677,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:192","message":"Payments section completed","data":{"duration":1083,"count":0},"timestamp":1767880096726,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:255","message":"JWT callback: refresh failed","data":{"error":"\nInvalid `__TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$fleet$2d$rental$2d$system$2f$lib$2f$server$2f$timeout$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__[\"withTimeout\"])(__TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$fleet$2d$rental$2d$system$2f$lib$2f$prisma$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__[\"prisma\"].user.findUnique()` invocation in\nC:\\Users\\Teacher\\Downloads\\fleet-rental-system\\.next\\dev\\server\\chunks\\ssr\\[root-of-the-server]__bdd2f43d._.js:364:392\n\n  361 // #endregion\n  362 try {\n  363     // Add timeout to prevent hanging\n→ 364     const dbUser = await (0, __TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$fleet$2d$rental$2d$system$2f$lib$2f$server$2f$timeout$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__[\"withTimeout\"])(__TURBOPACK__imported__module__$5b$project$5d2f$Downloads$2f$fleet$2d$rental$2d$system$2f$lib$2f$prisma$2e$ts__$5b$app$2d$rsc$5d$__$28$ecmascript$29$__[\"prisma\"].user.findUnique(\nCan't reach database server at `aws-1-eu-central-1.pooler.supabase.com:5432`\n\nPlease make sure your database server is running at `aws-1-eu-central-1.pooler.supabase.com:5432`."},"timestamp":1767880096727,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":1154,"hasSession":true},"timestamp":1767880096760,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880096764,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880096765,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:18","message":"requireAdmin completed","data":{"duration":1167},"timestamp":1767880096770,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:30","message":"Prisma user query start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880096771,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:43","message":"Prisma user query failed","data":{"error":"Timeout after 3000ms"},"timestamp":1767880099787,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:50","message":"AdminLayout rendering","data":{"totalDuration":4189},"timestamp":1767880099790,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:41","message":"Dashboard page data fetch error","data":{"errorName":"Error","errorMessage":"Dashboard timeout after 8000ms","duration":8008},"timestamp":1767880103647,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/prisma.ts:7","message":"Prisma client initialization start","data":{"hasExisting":true,"nodeEnv":"development","hasDbUrl":true,"hasDirectUrl":false},"timestamp":1767880104573,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/prisma.ts:10","message":"Prisma client initialized","data":{"isNew":false},"timestamp":1767880104573,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880104575,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880104591,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880104592,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880104630,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880104632,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880104649,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880104651,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":1560},"timestamp":1767880106208,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":1561},"timestamp":1767880106211,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":1627,"hasSession":true},"timestamp":1767880106219,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880106221,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880106220,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":1593,"hasSession":true},"timestamp":1767880106224,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880106226,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880106225,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880109309,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880134282,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880134283,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880134291,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":1949},"timestamp":1767880136240,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":1964,"hasSession":true},"timestamp":1767880136247,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880136248,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880136248,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880145544,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:10","message":"AdminLayout entry","data":{},"timestamp":1767880145574,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:14","message":"requireAdmin call start","data":{},"timestamp":1767880145588,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880145590,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880145591,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:35","message":"Dashboard page data fetch start","data":{"range":"all"},"timestamp":1767880145651,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:127","message":"getAdminDashboardData entry","data":{"range":"all"},"timestamp":1767880145652,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880145652,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880145696,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:10","message":"AdminLayout entry","data":{},"timestamp":1767880145724,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880145725,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880145726,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:14","message":"requireAdmin call start","data":{},"timestamp":1767880145725,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:35","message":"Dashboard page data fetch start","data":{"range":"all"},"timestamp":1767880145748,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880145750,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:127","message":"getAdminDashboardData entry","data":{"range":"all"},"timestamp":1767880145749,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880145776,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:192","message":"Payments section completed","data":{"duration":593,"count":0},"timestamp":1767880146245,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":593},"timestamp":1767880146289,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":710,"hasSession":true},"timestamp":1767880146301,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880146305,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880146305,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:18","message":"requireAdmin completed","data":{"duration":723},"timestamp":1767880146311,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:30","message":"Prisma user query start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880146312,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:192","message":"Payments section completed","data":{"duration":615,"count":0},"timestamp":1767880146365,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":594},"timestamp":1767880146370,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":654,"hasSession":true},"timestamp":1767880146380,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880146383,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880146383,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:18","message":"requireAdmin completed","data":{"duration":664},"timestamp":1767880146389,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:30","message":"Prisma user query start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880146390,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:38","message":"Prisma user query completed","data":{"duration":417},"timestamp":1767880146728,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:50","message":"AdminLayout rendering","data":{"totalDuration":1156},"timestamp":1767880146729,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:38","message":"Prisma user query completed","data":{"duration":451},"timestamp":1767880146841,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:50","message":"AdminLayout rendering","data":{"totalDuration":1118},"timestamp":1767880146841,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880150046,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:38","message":"Dashboard page data fetch success","data":{"duration":4398},"timestamp":1767880150049,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880150465,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:38","message":"Dashboard page data fetch success","data":{"duration":4721},"timestamp":1767880150469,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:35","message":"Dashboard page data fetch start","data":{"range":"all"},"timestamp":1767880161915,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:127","message":"getAdminDashboardData entry","data":{"range":"all"},"timestamp":1767880161917,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880161917,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:192","message":"Payments section completed","data":{"duration":437,"count":0},"timestamp":1767880162354,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880164216,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880164222,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880164225,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880164232,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":1170},"timestamp":1767880165402,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":1183,"hasSession":true},"timestamp":1767880165407,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880165409,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880165410,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880167622,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:38","message":"Dashboard page data fetch success","data":{"duration":5710},"timestamp":1767880167625,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880168509,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:10","message":"AdminLayout entry","data":{},"timestamp":1767880168537,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:14","message":"requireAdmin call start","data":{},"timestamp":1767880168553,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880168554,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880168555,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:35","message":"Dashboard page data fetch start","data":{"range":"all"},"timestamp":1767880168619,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880168621,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880168654,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:192","message":"Payments section completed","data":{"duration":630,"count":0},"timestamp":1767880169251,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":637},"timestamp":1767880169290,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":746,"hasSession":true},"timestamp":1767880169301,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880169304,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880169304,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:18","message":"requireAdmin completed","data":{"duration":756},"timestamp":1767880169309,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:30","message":"Prisma user query start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880169310,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:38","message":"Prisma user query completed","data":{"duration":704},"timestamp":1767880170014,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:50","message":"AdminLayout rendering","data":{"totalDuration":1479},"timestamp":1767880170015,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880174208,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:38","message":"Dashboard page data fetch success","data":{"duration":5592},"timestamp":1767880174211,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880179466,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:10","message":"AdminLayout entry","data":{},"timestamp":1767880179488,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:14","message":"requireAdmin call start","data":{},"timestamp":1767880179508,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880179509,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880179510,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:35","message":"Dashboard page data fetch start","data":{"range":"all"},"timestamp":1767880179557,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880179558,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880179609,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":2801},"timestamp":1767880182409,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":2909,"hasSession":true},"timestamp":1767880182419,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880182422,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880182421,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:18","message":"requireAdmin completed","data":{"duration":2919},"timestamp":1767880182427,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:30","message":"Prisma user query start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880182428,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:38","message":"Prisma user query completed","data":{"duration":2022},"timestamp":1767880184450,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:50","message":"AdminLayout rendering","data":{"totalDuration":4964},"timestamp":1767880184451,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/page.tsx:41","message":"Dashboard page data fetch error","data":{"errorName":"Error","errorMessage":"Dashboard timeout after 8000ms","duration":8005},"timestamp":1767880187561,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880187930,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880190862,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:10","message":"AdminLayout entry","data":{},"timestamp":1767880190874,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:14","message":"requireAdmin call start","data":{},"timestamp":1767880190891,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880190892,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880190893,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880190925,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880190953,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":564},"timestamp":1767880191517,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":632,"hasSession":true},"timestamp":1767880191525,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880191527,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880191528,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:18","message":"requireAdmin completed","data":{"duration":643},"timestamp":1767880191533,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"app/admin/layout.tsx:30","message":"Prisma user query start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880191534,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:38","message":"Prisma user query completed","data":{"duration":498},"timestamp":1767880192031,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"app/admin/layout.tsx:50","message":"AdminLayout rendering","data":{"totalDuration":1159},"timestamp":1767880192032,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880194273,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880194274,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880194278,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":211},"timestamp":1767880194489,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":220,"hasSession":true},"timestamp":1767880194493,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880194494,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880194494,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880197356,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880210468,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:18","message":"requireAdmin: entry","data":{},"timestamp":1767880210491,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:5","message":"requireAuth: auth() call start","data":{},"timestamp":1767880210504,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880210539,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880210566,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":2455},"timestamp":1767880213020,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/permissions.ts:8","message":"requireAuth: auth() completed","data":{"duration":2527,"hasSession":true},"timestamp":1767880213030,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:21","message":"requireAdmin: checking role","data":{"role":"ADMIN"},"timestamp":1767880213032,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/permissions.ts:25","message":"requireAdmin: success","data":{},"timestamp":1767880213033,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880217328,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880222735,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880222799,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880222816,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":406},"timestamp":1767880223222,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:6","message":"NextAuth initialization","data":{},"timestamp":1767880224323,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880224343,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":519},"timestamp":1767880224861,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880228684,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880230352,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880230378,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:144","message":"Payments section query start","data":{"hasStart":false},"timestamp":1767880230406,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880230420,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":1415},"timestamp":1767880231793,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":2011},"timestamp":1767880232430,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880236335,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880236764,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880254345,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":456},"timestamp":1767880254801,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880284294,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":463},"timestamp":1767880284756,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880335402,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":388},"timestamp":1767880335790,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/dashboard/adminDashboard.ts:585","message":"getAdminDashboardData success exit","data":{"range":"all"},"timestamp":1767880338521,"sessionId":"debug-session","runId":"run1","hypothesisId":"B"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880339283,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":291},"timestamp":1767880339573,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880346309,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":199},"timestamp":1767880346507,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:225","message":"JWT callback: refresh user data start","data":{"userId":"cmk2msahc0000vnmw2ejtvhi9"},"timestamp":1767880355436,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
+{"location":"lib/auth.ts:245","message":"JWT callback: refresh completed","data":{"duration":433},"timestamp":1767880355868,"sessionId":"debug-session","runId":"run1","hypothesisId":"A"}
