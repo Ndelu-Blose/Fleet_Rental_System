@@ -2,6 +2,7 @@ import { type NextRequest, NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
 import { env } from "@/lib/env"
+import { checkPaymentConfiguration } from "@/lib/payment-config"
 
 // Helper to get/set settings
 async function getSetting(key: string): Promise<string | null> {
@@ -72,7 +73,10 @@ export async function GET(req: NextRequest) {
       stripe: !!(env.stripe.secretKey && env.stripe.webhookSecret),
     }
 
-    return NextResponse.json({ settings, envStatus })
+    // Get payment configuration status
+    const configStatus = await checkPaymentConfiguration()
+
+    return NextResponse.json({ settings, envStatus, configStatus })
   } catch (error: any) {
     console.error("Failed to fetch payment settings:", error)
     return NextResponse.json({ error: error.message || "Failed to fetch settings" }, { status: 500 })

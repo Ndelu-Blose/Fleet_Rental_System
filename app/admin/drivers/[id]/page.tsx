@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Loader2, ArrowLeft, Mail, Phone, MapPin, Car, CreditCard, FileText, MoreVertical, Lock, Trash2, UserCheck } from "lucide-react"
 import { toast } from "sonner"
+import { formatZARFromCents } from "@/lib/money"
 
 type Driver = {
   id: string

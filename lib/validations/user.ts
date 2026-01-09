@@ -20,6 +20,7 @@ export const updateProfileSchema = z.object({
   name: z.string().max(100, "Name is too long").optional().nullable(),
   phone: z.string().max(20, "Phone number is too long").optional().nullable(),
   idNumber: z.string().max(20, "ID number is too long").optional().nullable(),
+  driverLicenseNumber: z.string().max(50, "Driver license number is too long").optional().nullable(),
   addressLine1: z.string().max(200, "Address line 1 is too long").optional().nullable(),
   addressLine2: z.string().max(200, "Address line 2 is too long").optional().nullable(),
   city: z.string().max(100, "City is too long").optional().nullable(),

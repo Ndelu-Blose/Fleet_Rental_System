@@ -12,6 +12,7 @@ import { Loader2, AlertCircle, CheckCircle2, MapPin, Mail, Phone, User, FileText
 type Profile = {
   id: string
   idNumber: string | null
+  driverLicenseNumber: string | null
   addressLine1: string | null
   addressLine2: string | null
   city: string | null
@@ -43,6 +44,7 @@ export default function DriverProfilePage() {
     name: "",
     phone: "",
     idNumber: "",
+    driverLicenseNumber: "",
     addressLine1: "",
     addressLine2: "",
     city: "",
@@ -63,6 +65,7 @@ export default function DriverProfilePage() {
         name: data.user.name || "",
         phone: data.user.phone || "",
         idNumber: data.idNumber || "",
+        driverLicenseNumber: data.driverLicenseNumber || "",
         addressLine1: data.addressLine1 || "",
         addressLine2: data.addressLine2 || "",
         city: data.city || "",
@@ -279,6 +282,16 @@ export default function DriverProfilePage() {
                   value={formData.idNumber}
                   onChange={(e) => setFormData({ ...formData, idNumber: e.target.value })}
                   placeholder="0000000000000"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="driverLicenseNumber">Driver's License Number</Label>
+                <Input
+                  id="driverLicenseNumber"
+                  value={formData.driverLicenseNumber}
+                  onChange={(e) => setFormData({ ...formData, driverLicenseNumber: e.target.value })}
+                  placeholder="Enter your driver's license number"
                 />
               </div>
 

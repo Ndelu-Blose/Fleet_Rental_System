@@ -123,3 +123,16 @@
     @apply bg-background text-foreground;
   }
 }
+
+@media print {
+  nav, header, footer, .no-print {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+  }
+  .print-area {
+    box-shadow: none !important;
+    border: none !important;
+  }
+}

@@ -31,6 +31,7 @@ model DriverProfile {
   id                 String             @id @default(cuid())
   userId             String             @unique
   idNumber           String?
+  driverLicenseNumber String?           // Driver's license number
   addressLine1       String?
   addressLine2       String?
   city               String?
@@ -75,6 +76,8 @@ model Vehicle {
   make        String
   model       String
   year        Int?
+  vin         String?              // Vehicle Identification Number
+  color       String?              // Vehicle color
   status      VehicleStatus        @default(AVAILABLE)
   notes       String?
   createdAt   DateTime             @default(now())

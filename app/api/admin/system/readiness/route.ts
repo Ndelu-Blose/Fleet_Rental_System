@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { requireAdmin } from "@/lib/permissions"
 import { prisma } from "@/lib/prisma"
 import { getSetting } from "@/lib/settings"
+import { checkPaymentConfiguration } from "@/lib/payment-config"
 import { ContractStatus, VerificationStatus, VehicleStatus } from "@prisma/client"
 
 type StepState = "DONE" | "ACTION" | "WAITING" | "LOCKED"
@@ -37,7 +38,7 @@ export async function GET() {
     // Fetch once (avoid many queries later)
     const companyName = await getSetting("company.name", "")
     const companyEmail = await getSetting("company.email", "")
-    const paymentMethod = await getSetting("payments.method", "")
+    const paymentConfig = await checkPaymentConfiguration()
 
     const driversCount = await prisma.driverProfile.count()
     const verifiedDriversCount = await prisma.driverProfile.count({
@@ -74,17 +75,21 @@ export async function GET() {
       })
     }
 
-    // 2. Payment method
+    // 2. Payment configuration
     {
-      const completed = !!paymentMethod
+      const completed = paymentConfig.configured
       const canDoNow = true
       checklist.push({
         id: "payments",
-        label: "Payment method",
-        description: "Choose how drivers will pay.",
+        label: "Payment rules",
+        description:
+          paymentConfig.missing.length > 0
+            ? `Complete payment setup: ${paymentConfig.missing[0]}`
+            : "Configure payment method, currency, rent cycle, and due dates.",
         completed,
         state: computeState({ completed, canDoNow }),
-        actionLabel: "Set up payments",
+        hint: paymentConfig.missing.length > 0 ? paymentConfig.missing[0] : undefined,
+        actionLabel: "Complete payment setup",
         actionHref: "/admin/settings/payments",
       })
     }

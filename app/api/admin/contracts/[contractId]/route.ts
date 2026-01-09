@@ -24,6 +24,7 @@ export async function GET(
                 id: true,
                 name: true,
                 email: true,
+                phone: true,
               },
             },
           },
@@ -34,6 +35,7 @@ export async function GET(
             reg: true,
             make: true,
             model: true,
+            year: true,
           },
         },
         payments: {

@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { SettingsHeader } from "../_components/settings-header";
 import { StatusBadge } from "../_components/status-badge";
-import { getPaymentsStatus } from "../_utils/status";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -60,6 +59,11 @@ export default function PaymentsClient() {
     resend: false,
     stripe: false,
   });
+  const [configStatus, setConfigStatus] = useState<{
+    configured: boolean;
+    missing: string[];
+    warnings: string[];
+  } | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -73,6 +77,7 @@ export default function PaymentsClient() {
         setSettings(data.settings);
         setInitialSettings(JSON.parse(JSON.stringify(data.settings))); // Deep copy
         setEnvStatus(data.envStatus);
+        setConfigStatus(data.configStatus || { configured: false, missing: [], warnings: [] });
         // Note: The payments API doesn't return lastUpdatedAt, so we'll leave it null
       }
     } catch (error) {
@@ -138,12 +143,8 @@ export default function PaymentsClient() {
     }
   };
 
-  // Convert settings to form format for status check
-  const formForStatus: Record<string, string> = {
-    "payments.mode": settings.mode,
-    "payments.graceDays": settings.gracePeriodDays.toString(),
-  };
-  const configured = getPaymentsStatus(formForStatus);
+  // Use configuration status from API (single source of truth)
+  const configured = configStatus?.configured ?? false;
 
   if (loading) {
     return (
@@ -169,9 +170,21 @@ export default function PaymentsClient() {
             saving={saving}
           />
 
-          <div className="mt-4 flex items-center gap-2">
-            <span className="text-sm font-medium">Status:</span>
-            <StatusBadge configured={configured} />
+          <div className="mt-4 space-y-2">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">Status:</span>
+              <StatusBadge configured={configured} />
+            </div>
+            {configStatus && !configStatus.configured && configStatus.missing.length > 0 && (
+              <div className="mt-2 text-xs text-muted-foreground">
+                <p className="font-medium mb-1">Missing requirements:</p>
+                <ul className="list-disc list-inside space-y-0.5">
+                  {configStatus.missing.map((item, idx) => (
+                    <li key={idx}>{item}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>

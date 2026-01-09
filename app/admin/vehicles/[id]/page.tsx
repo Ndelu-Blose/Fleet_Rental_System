@@ -14,6 +14,7 @@ import { VehicleCosts } from "@/components/vehicle-costs"
 import { VehicleSetupChecklist } from "@/components/admin/VehicleSetupChecklist"
 import { Loader2, ArrowLeft, AlertCircle, UserPlus, FileText, Edit, MoreVertical, CheckCircle2, XCircle } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { formatZARFromCents } from "@/lib/money"
 
 type Vehicle = {
   id: string
@@ -102,6 +103,8 @@ export default function VehicleDetailsPage() {
         make: data.make,
         model: data.model,
         year: data.year?.toString() || "",
+        vin: data.vin || "",
+        color: data.color || "",
         status: data.status,
         notes: data.notes || "",
         licenseExpiry: data.compliance?.licenseExpiry?.split("T")[0] || "",
@@ -284,31 +287,7 @@ export default function VehicleDetailsPage() {
 
         <TabsContent value="overview" className="space-y-4">
           {/* Setup Checklist */}
-          {vehicle && (
-            <VehicleSetupChecklist
-              vehicle={{
-                id: vehicle.id,
-                reg: vehicle.reg,
-                type: vehicle.type,
-                status: vehicle.status,
-                documents: (vehicle.documents || []).map((d: any) => ({ type: d.type })),
-                compliance: vehicle.compliance
-                  ? {
-                      licenseExpiry: vehicle.compliance.licenseExpiry,
-                      insuranceExpiry: vehicle.compliance.insuranceExpiry,
-                      roadworthyExpiry: vehicle.compliance.roadworthyExpiry,
-                    }
-                  : null,
-                contracts: (vehicle.contracts || []).map((c: any) => ({
-                  id: c.id,
-                  status: c.status,
-                  driverSignedAt: c.driverSignedAt,
-                  signedPdfPath: c.signedPdfPath,
-                  createdAt: c.createdAt,
-                })),
-              }}
-            />
-          )}
+          {vehicle && <VehicleSetupChecklist vehicleId={vehicle.id} />}
 
           {/* Assigned Driver Card */}
           {activeContract ? (
@@ -473,6 +452,26 @@ export default function VehicleDetailsPage() {
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label htmlFor="vin">VIN (Vehicle Identification Number)</Label>
+                    <Input
+                      id="vin"
+                      value={formData.vin}
+                      onChange={(e) => setFormData({ ...formData, vin: e.target.value })}
+                      placeholder="1HGBH41JXMN109186"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="color">Color</Label>
+                    <Input
+                      id="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                      placeholder="White"
+                    />
+                  </div>
+
                   {vehicle.notes !== null && (
                     <div className="space-y-2 col-span-2">
                       <Label htmlFor="notes">Notes</Label>
@@ -511,6 +510,18 @@ export default function VehicleDetailsPage() {
                     <p className="text-muted-foreground">Model</p>
                     <p className="font-medium">{vehicle.model}</p>
                   </div>
+                  {vehicle.vin && (
+                    <div>
+                      <p className="text-muted-foreground">VIN</p>
+                      <p className="font-medium">{vehicle.vin}</p>
+                    </div>
+                  )}
+                  {vehicle.color && (
+                    <div>
+                      <p className="text-muted-foreground">Color</p>
+                      <p className="font-medium">{vehicle.color}</p>
+                    </div>
+                  )}
                   {vehicle.notes && (
                     <div className="col-span-2">
                       <p className="text-muted-foreground">Notes</p>

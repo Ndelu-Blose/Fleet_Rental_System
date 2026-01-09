@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    const { type, reg, make, model, year, notes, licenseExpiry, insuranceExpiry, roadworthyExpiry } = validationResult.data
+    const { type, reg, make, model, year, vin, color, notes, licenseExpiry, insuranceExpiry, roadworthyExpiry } = validationResult.data
 
     const vehicle = await prisma.vehicle.create({
       data: {
@@ -68,6 +68,8 @@ export async function POST(req: NextRequest) {
         make,
         model,
         year,
+        vin,
+        color,
         notes,
         status: "AVAILABLE",
         compliance: {

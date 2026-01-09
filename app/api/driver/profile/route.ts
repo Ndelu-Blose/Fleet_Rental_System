@@ -48,7 +48,7 @@ export async function PATCH(req: NextRequest) {
       )
     }
 
-    const { name, phone, idNumber, addressLine1, addressLine2, city, province, postalCode } = validationResult.data
+    const { name, phone, idNumber, driverLicenseNumber, addressLine1, addressLine2, city, province, postalCode } = validationResult.data
 
     // Update user fields
     await prisma.user.update({
@@ -64,6 +64,7 @@ export async function PATCH(req: NextRequest) {
       where: { userId: session.user.id },
       data: {
         idNumber,
+        driverLicenseNumber,
         addressLine1,
         addressLine2,
         city,

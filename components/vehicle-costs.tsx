@@ -97,8 +97,6 @@ export function VehicleCosts({ vehicleId, costs, onRefresh }: VehicleCostsProps)
     }
   }
 
-  import { formatZARFromCents } from "@/lib/money"
-
   const totalCost = costs.reduce((sum, cost) => sum + cost.amountCents, 0)
 
   const getCostTypeColor = (type: string) => {

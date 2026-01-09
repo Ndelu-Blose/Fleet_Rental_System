@@ -18,6 +18,8 @@ export const createVehicleSchema = z.object({
     .refine((val) => val === null || (val >= 1900 && val <= new Date().getFullYear() + 1), {
       message: "Year must be between 1900 and next year",
     }),
+  vin: z.string().max(50, "VIN is too long").optional().nullable(),
+  color: z.string().max(50, "Color is too long").optional().nullable(),
   notes: z.string().max(1000, "Notes are too long").optional().nullable(),
   licenseExpiry: z
     .union([z.string(), z.date(), z.null()])
@@ -62,6 +64,8 @@ export const updateVehicleSchema = z.object({
       message: "Year must be between 1900 and next year",
     }),
   status: z.enum(["AVAILABLE", "ASSIGNED", "MAINTENANCE", "INACTIVE"]).optional(),
+  vin: z.string().max(50).optional().nullable(),
+  color: z.string().max(50).optional().nullable(),
   notes: z.string().max(1000).optional().nullable(),
   licenseExpiry: z
     .union([z.string(), z.date(), z.null()])

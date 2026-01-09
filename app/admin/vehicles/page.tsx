@@ -49,6 +49,8 @@ export default function AdminVehiclesPage() {
     make: "",
     model: "",
     year: "",
+    vin: "",
+    color: "",
     notes: "",
     licenseExpiry: "",
     insuranceExpiry: "",
@@ -90,6 +92,8 @@ export default function AdminVehiclesPage() {
           make: "",
           model: "",
           year: "",
+          vin: "",
+          color: "",
           notes: "",
           licenseExpiry: "",
           insuranceExpiry: "",
@@ -285,6 +289,28 @@ export default function AdminVehiclesPage() {
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: e.target.value })}
                   placeholder="2020"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="vin">VIN (Vehicle Identification Number)</Label>
+                <Input
+                  id="vin"
+                  value={formData.vin}
+                  onChange={(e) => setFormData({ ...formData, vin: e.target.value })}
+                  placeholder="1HGBH41JXMN109186"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="color">Color</Label>
+                <Input
+                  id="color"
+                  value={formData.color}
+                  onChange={(e) => setFormData({ ...formData, color: e.target.value })}
+                  placeholder="White"
                 />
               </div>
             </div>

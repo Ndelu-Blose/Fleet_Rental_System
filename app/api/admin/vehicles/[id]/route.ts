@@ -87,7 +87,7 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
       )
     }
 
-    const { type, reg, make, model, year, notes, status, licenseExpiry, insuranceExpiry, roadworthyExpiry } = validationResult.data
+    const { type, reg, make, model, year, vin, color, notes, status, licenseExpiry, insuranceExpiry, roadworthyExpiry } = validationResult.data
 
     const vehicle = await prisma.vehicle.update({
       where: { id },
@@ -97,6 +97,8 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
         make,
         model,
         year,
+        vin,
+        color,
         notes,
         status: status as any,
         compliance: {
