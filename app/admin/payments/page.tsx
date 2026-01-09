@@ -70,7 +70,7 @@ export default function AdminPaymentsPage() {
     }
   }
 
-  const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`
+  const formatCurrency = formatZARFromCents
 
   const getStatusColor = (status: string) => {
     switch (status) {

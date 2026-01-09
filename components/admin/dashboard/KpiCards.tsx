@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { TrendingUp, Clock, AlertCircle, FileCheck, ArrowRight } from "lucide-react";
 import type { AdminDashboardData, DashboardRange } from "@/lib/dashboard/adminDashboard";
+import { formatZARFromCents } from "@/lib/money";
 
 export default function KpiCards({ data }: { data: AdminDashboardData }) {
   const params = useSearchParams();
@@ -32,7 +33,7 @@ export default function KpiCards({ data }: { data: AdminDashboardData }) {
       <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
         <Card
           title="Total Revenue"
-          value={`R ${data.kpis.totalRevenue.toFixed(2)}`}
+          value={formatZARFromCents(data.kpis.totalRevenue)}
           sub={`Last payment: ${
             data.kpis.lastPaymentDate ? new Date(data.kpis.lastPaymentDate).toLocaleDateString() : "—"
           }`}
@@ -42,7 +43,7 @@ export default function KpiCards({ data }: { data: AdminDashboardData }) {
 
         <Card
           title="Pending Payments"
-          value={`R ${data.kpis.pendingAmount.toFixed(2)}`}
+          value={formatZARFromCents(data.kpis.pendingAmount)}
           sub={`${data.kpis.pendingCount} payment(s) due soon`}
           href="/admin/payments?status=pending"
           icon={<Clock className="h-5 w-5" />}
@@ -50,7 +51,7 @@ export default function KpiCards({ data }: { data: AdminDashboardData }) {
 
         <Card
           title="Overdue"
-          value={`R ${data.kpis.overdueAmount.toFixed(2)}`}
+          value={formatZARFromCents(data.kpis.overdueAmount)}
           sub={
             data.kpis.oldestOverdueDays !== null
               ? `Oldest overdue: ${data.kpis.oldestOverdueDays} day(s)`

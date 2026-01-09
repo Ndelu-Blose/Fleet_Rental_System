@@ -178,7 +178,7 @@ export default function VehicleDetailsPage() {
     }
   }
 
-  const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`
+  const formatCurrency = formatZARFromCents
 
   return (
     <div className="space-y-6">

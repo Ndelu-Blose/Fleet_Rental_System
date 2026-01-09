@@ -74,7 +74,7 @@ export default function DriverPaymentsContent() {
     }
   }
 
-  const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`
+  const formatCurrency = formatZARFromCents
 
   const isOverdue = (payment: Payment) => {
     return payment.status === "PENDING" && new Date(payment.dueDate) < new Date()

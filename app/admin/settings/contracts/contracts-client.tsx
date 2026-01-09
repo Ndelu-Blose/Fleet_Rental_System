@@ -151,7 +151,7 @@ export default function ContractsClient() {
                 </p>
                 {s.form["contracts.default.carAmount"] && (
                   <p className="text-xs font-medium text-primary">
-                    = R {((Number(s.form["contracts.default.carAmount"]) || 0) / 100).toFixed(2)}
+                    = {formatZARFromCents(Number(s.form["contracts.default.carAmount"]) || 0)}
                   </p>
                 )}
               </div>
@@ -186,7 +186,7 @@ export default function ContractsClient() {
                 </p>
                 {s.form["contracts.default.bikeAmount"] && (
                   <p className="text-xs font-medium text-primary">
-                    = R {((Number(s.form["contracts.default.bikeAmount"]) || 0) / 100).toFixed(2)}
+                    = {formatZARFromCents(Number(s.form["contracts.default.bikeAmount"]) || 0)}
                   </p>
                 )}
               </div>
@@ -253,7 +253,7 @@ export default function ContractsClient() {
                   </p>
                   {s.form["contracts.depositAmount"] && (
                     <p className="text-xs font-medium text-primary">
-                      = R {((Number(s.form["contracts.depositAmount"]) || 0) / 100).toFixed(2)}
+                      = {formatZARFromCents(Number(s.form["contracts.depositAmount"]) || 0)}
                     </p>
                   )}
                 </div>

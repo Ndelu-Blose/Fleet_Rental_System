@@ -37,8 +37,7 @@ export function ViewModeDisplay({ label, value, type = "text", className = "" }:
 
       case "currency":
         const cents = typeof value === "number" ? value : Number(value) || 0;
-        const amount = (cents / 100).toFixed(2);
-        return <span className="font-medium">R {amount}</span>;
+        return <span className="font-medium">{formatZARFromCents(cents)}</span>;
 
       case "number":
         return <span className="font-medium">{value}</span>;

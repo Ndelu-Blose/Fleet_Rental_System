@@ -230,7 +230,7 @@ export default function SystemClient() {
     (attention?.complianceAlerts.length || 0) +
     (attention?.upcomingMaintenance.length || 0);
 
-  const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`;
+  const formatCurrency = formatZARFromCents;
   const formatDate = (dateString: string) => new Date(dateString).toLocaleDateString();
 
   return (

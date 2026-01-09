@@ -18,10 +18,10 @@ export type AdminDashboardData = {
   range: DashboardRange;
 
   kpis: {
-    totalRevenue: number; // sum(paid) in rands
-    pendingAmount: number; // sum(pending) in rands
+    totalRevenue: number; // sum(paid) in cents
+    pendingAmount: number; // sum(pending) in cents
     pendingCount: number;
-    overdueAmount: number; // sum(overdue) in rands
+    overdueAmount: number; // sum(overdue) in cents
     overdueCount: number;
     oldestOverdueDays: number | null;
     activeContracts: number;
@@ -410,10 +410,10 @@ export async function getAdminDashboardData(range: DashboardRange): Promise<Admi
     console.timeEnd("dashboard:parallel-queries");
 
     // Process results
-    const totalRevenue = (revenueResult._sum.amountCents || 0) / 100;
-    const pendingAmount = (pendingResult._sum.amountCents || 0) / 100;
+    const totalRevenue = revenueResult._sum.amountCents || 0;
+    const pendingAmount = pendingResult._sum.amountCents || 0;
     const pendingCount = pendingResult._count._all;
-    const overdueAmount = (overdueResult._sum.amountCents || 0) / 100;
+    const overdueAmount = overdueResult._sum.amountCents || 0;
     const overdueCount = overdueResult._count._all;
 
     const oldestOverdueDays = oldestOverduePayment?.dueDate

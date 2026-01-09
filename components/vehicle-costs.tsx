@@ -11,6 +11,8 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { DollarSign, Loader2, Calendar } from "lucide-react"
+import { toast } from "sonner"
+import { formatZARFromCents, parseZARToCents } from "@/lib/money"
 
 interface VehicleCost {
   id: string
@@ -54,10 +56,17 @@ export function VehicleCosts({ vehicleId, costs, onRefresh }: VehicleCostsProps)
     setSaving(true)
 
     try {
+      const cents = parseZARToCents(formData.amountCents)
+      if (cents === null) {
+        toast.error("Invalid cost amount")
+        setSaving(false)
+        return
+      }
+
       const formDataToSend = new FormData()
       formDataToSend.append("type", formData.type)
       formDataToSend.append("title", formData.title)
-      formDataToSend.append("amountCents", (Number.parseFloat(formData.amountCents) * 100).toString())
+      formDataToSend.append("amountCents", cents.toString())
       formDataToSend.append("occurredAt", formData.occurredAt)
       formDataToSend.append("vendor", formData.vendor)
       formDataToSend.append("notes", formData.notes)
@@ -88,9 +97,7 @@ export function VehicleCosts({ vehicleId, costs, onRefresh }: VehicleCostsProps)
     }
   }
 
-  const formatCurrency = (cents: number) => {
-    return `R ${(cents / 100).toFixed(2)}`
-  }
+  import { formatZARFromCents } from "@/lib/money"
 
   const totalCost = costs.reduce((sum, cost) => sum + cost.amountCents, 0)
 
@@ -118,7 +125,7 @@ export function VehicleCosts({ vehicleId, costs, onRefresh }: VehicleCostsProps)
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-medium">Cost History</h3>
-          <p className="text-sm text-muted-foreground">Total: {formatCurrency(totalCost)}</p>
+          <p className="text-sm text-muted-foreground">Total: {formatZARFromCents(totalCost)}</p>
         </div>
         <Button onClick={() => setShowDialog(true)} size="sm">
           <DollarSign className="mr-2 h-4 w-4" />
@@ -148,7 +155,7 @@ export function VehicleCosts({ vehicleId, costs, onRefresh }: VehicleCostsProps)
               </div>
 
               <div className="text-right">
-                <p className="text-lg font-bold">{formatCurrency(cost.amountCents)}</p>
+                <p className="text-lg font-bold">{formatZARFromCents(cost.amountCents)}</p>
                 {cost.receiptUrl && (
                   <a href={cost.receiptUrl} target="_blank" rel="noopener noreferrer">
                     <Button variant="link" size="sm" className="h-auto p-0 text-xs">

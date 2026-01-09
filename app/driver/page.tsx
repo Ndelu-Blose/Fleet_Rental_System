@@ -82,7 +82,7 @@ export default function DriverDashboardPage() {
     }
   }
 
-  const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`
+  const formatCurrency = formatZARFromCents
 
   const nextPayment = contract?.payments.find((p) => p.status === "PENDING")
 

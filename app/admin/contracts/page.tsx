@@ -3,15 +3,20 @@
 import type React from "react"
 
 import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useSearchParams, useRouter } from "next/navigation"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Loader2, Plus, Calendar, DollarSign, FileText, Download } from "lucide-react"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Badge } from "@/components/ui/badge"
+import { Loader2, Plus, Calendar, DollarSign, FileText, Download, Edit, Trash2, Copy, Eye, X, Pause, RotateCcw, CheckCircle2, AlertCircle, MoreVertical } from "lucide-react"
 import { toast } from "sonner"
+import { formatZARFromCents, parseZARToCents } from "@/lib/money"
+import { ContractStatus } from "@prisma/client"
+import Link from "next/link"
 
 type Contract = {
   id: string
@@ -23,6 +28,7 @@ type Contract = {
   driverSignedAt: string | null
   signedPdfUrl: string | null
   driver: {
+    verificationStatus: string
     user: {
       name: string | null
       email: string
@@ -33,11 +39,14 @@ type Contract = {
     reg: string
     make: string
     model: string
+    status: string
   }
   payments: Array<{
     id: string
+    amountCents: number
     status: string
     dueDate: string
+    paidAt: string | null
   }>
 }
 
@@ -59,6 +68,7 @@ type Vehicle = {
 }
 
 export default function AdminContractsPage() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const [contracts, setContracts] = useState<Contract[]>([])
   const [drivers, setDrivers] = useState<Driver[]>([])
@@ -131,12 +141,18 @@ export default function AdminContractsPage() {
     setCreating(true)
 
     try {
+      const cents = parseZARToCents(formData.feeAmountCents)
+      if (cents === null) {
+        toast.error("Invalid rental fee amount")
+        return
+      }
+
       const res = await fetch("/api/admin/contracts", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          feeAmountCents: Number.parseFloat(formData.feeAmountCents) * 100,
+          feeAmountCents: cents,
         }),
       })
 
@@ -185,7 +201,95 @@ export default function AdminContractsPage() {
     }
   }
 
-  const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`
+  const handleDeleteDraft = async (contractId: string) => {
+    if (!confirm("Are you sure you want to delete this draft contract? This action cannot be undone.")) return
+
+    try {
+      const res = await fetch(`/api/admin/contracts/${contractId}`, {
+        method: "DELETE",
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success("Draft contract deleted")
+        await fetchContracts()
+      } else {
+        toast.error(data.error || "Failed to delete contract")
+      }
+    } catch (error) {
+      toast.error("Failed to delete contract")
+    }
+  }
+
+  const handleDuplicateContract = async (contract: Contract) => {
+    try {
+      const res = await fetch("/api/admin/contracts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          driverProfileId: contract.driver.id || "",
+          vehicleId: contract.vehicle.id,
+          feeAmountCents: contract.feeAmountCents,
+          frequency: contract.frequency,
+          startDate: new Date().toISOString().split("T")[0],
+        }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success("Contract duplicated successfully")
+        await fetchContracts()
+      } else {
+        toast.error(data.error || "Failed to duplicate contract")
+      }
+    } catch (error) {
+      toast.error("Failed to duplicate contract")
+    }
+  }
+
+  const handlePreviewContract = (contractId: string) => {
+    router.push(`/admin/contracts/${contractId}/preview`)
+  }
+
+  const handleRejectContract = async (contractId: string) => {
+    const reason = prompt("Please provide a reason for rejecting this contract:")
+    if (!reason) return
+
+    try {
+      const res = await fetch(`/api/admin/contracts/${contractId}/reject`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success("Contract rejected")
+        await fetchContracts()
+      } else {
+        toast.error(data.error || "Failed to reject contract")
+      }
+    } catch (error) {
+      toast.error("Failed to reject contract")
+    }
+  }
+
+  const handleSuspendContract = async (contractId: string) => {
+    if (!confirm("Suspend this contract? Billing will stop but the contract will remain in the system.")) return
+
+    try {
+      const res = await fetch(`/api/admin/contracts/${contractId}/suspend`, {
+        method: "POST",
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success("Contract suspended")
+        await fetchContracts()
+      } else {
+        toast.error(data.error || "Failed to suspend contract")
+      }
+    } catch (error) {
+      toast.error("Failed to suspend contract")
+    }
+  }
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -275,7 +379,10 @@ export default function AdminContractsPage() {
                 <div className="space-y-3 flex-1">
                   <div className="flex items-center gap-3">
                     <span className={`text-xs font-medium px-2 py-1 rounded ${getStatusColor(contract.status)}`}>
-                      {contract.status}
+                      {contract.status === ContractStatus.DRAFT ? "Draft (editable)" :
+                       contract.status === ContractStatus.SENT_TO_DRIVER || contract.status === "SENT" ? "Sent to driver (awaiting signature)" :
+                       contract.status === ContractStatus.ACTIVE ? "Active" :
+                       contract.status}
                     </span>
                     <h3 className="font-medium">
                       {contract.driver.user.name || contract.driver.user.email} → {contract.vehicle.reg}
@@ -285,7 +392,7 @@ export default function AdminContractsPage() {
                   <div className="flex items-center gap-6 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <DollarSign className="h-3 w-3" />
-                      {formatCurrency(contract.feeAmountCents)} {contract.frequency.toLowerCase()}
+                      {formatZARFromCents(contract.feeAmountCents)} {contract.frequency.toLowerCase()}
                     </div>
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
@@ -299,57 +406,171 @@ export default function AdminContractsPage() {
                     )}
                   </div>
 
-                  <div className="pt-2 border-t text-sm">
-                    <p className="text-muted-foreground">
-                      Vehicle: {contract.vehicle.make} {contract.vehicle.model}
-                    </p>
-                    <p className="text-muted-foreground">
-                      Payments: {contract.payments.filter((p) => p.status === "PAID").length} paid,{" "}
-                      {contract.payments.filter((p) => p.status === "PENDING").length} pending
-                    </p>
+                  <div className="pt-2 border-t space-y-2">
+                    {/* Status Indicators */}
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <Badge variant="outline" className="text-xs">
+                        Vehicle: {contract.vehicle.status}
+                      </Badge>
+                      <Badge variant="outline" className="text-xs">
+                        Driver: {contract.driver.verificationStatus === "VERIFIED" ? "✓ Verified" : contract.driver.verificationStatus}
+                      </Badge>
+                    </div>
+                    
+                    {/* Financial Snapshot */}
+                    {(() => {
+                      const paidPayments = contract.payments.filter((p) => p.status === "PAID")
+                      const pendingPayments = contract.payments.filter((p) => p.status === "PENDING")
+                      const totalBilled = contract.payments.reduce((sum, p) => sum + (p.amountCents || 0), 0)
+                      const outstanding = pendingPayments.reduce((sum, p) => sum + (p.amountCents || 0), 0)
+                      const nextPayment = pendingPayments.sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())[0]
+                      
+                      return (
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          <div>
+                            <p className="text-xs text-muted-foreground">Rate</p>
+                            <p className="font-medium">{formatZARFromCents(contract.feeAmountCents)} {contract.frequency.toLowerCase()}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Total Billed</p>
+                            <p className="font-medium">{formatZARFromCents(totalBilled)}</p>
+                          </div>
+                          <div>
+                            <p className="text-xs text-muted-foreground">Outstanding</p>
+                            <p className="font-medium text-orange-600">{formatZARFromCents(outstanding)}</p>
+                          </div>
+                          {nextPayment ? (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Next Payment</p>
+                              <p className="font-medium">{new Date(nextPayment.dueDate).toLocaleDateString()}</p>
+                            </div>
+                          ) : (
+                            <div>
+                              <p className="text-xs text-muted-foreground">Vehicle</p>
+                              <p className="font-medium">{contract.vehicle.make} {contract.vehicle.model}</p>
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
                   </div>
                 </div>
 
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   {(() => {
-                    const nextAction = getNextAction(contract)
+                    const status = contract.status
+                    const isDraft = status === ContractStatus.DRAFT
+                    const isSent = status === ContractStatus.SENT_TO_DRIVER || status === "SENT"
+                    const isSigned = status === ContractStatus.SIGNED_BY_DRIVER || status === ContractStatus.DRIVER_SIGNED
+                    const isActive = status === ContractStatus.ACTIVE
+                    const isEnded = status === ContractStatus.ENDED || status === ContractStatus.CANCELLED || status === ContractStatus.EXPIRED
                     
-                    if (nextAction.action === "send") {
-                      return (
-                        <Button
-                          variant={nextAction.variant}
-                          size="sm"
-                          onClick={async () => {
-                            try {
-                              const res = await fetch(`/api/admin/contracts/${contract.id}/send`, {
-                                method: "POST",
-                              })
-                              const data = await res.json()
-                              if (res.ok) {
-                                toast.success("Contract sent to driver!")
-                                await fetchContracts()
-                              } else {
-                                toast.error(data.error || "Failed to send contract")
-                              }
-                            } catch (error) {
-                              toast.error("Failed to send contract")
-                            }
-                          }}
-                        >
-                          {nextAction.label}
-                        </Button>
-                      )
-                    }
-                    
-                    if (nextAction.action === "activate") {
+                    // DRAFT actions
+                    if (isDraft) {
                       return (
                         <>
+                          <Button asChild variant="outline" size="sm">
+                            <Link href={`/admin/contracts/${contract.id}/edit`}>
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit
+                            </Link>
+                          </Button>
                           <Button
-                            variant={nextAction.variant}
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePreviewContract(contract.id)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            Preview
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleDuplicateContract(contract)}
+                          >
+                            <Copy className="h-4 w-4 mr-2" />
+                            Duplicate
+                          </Button>
+                          <Button
+                            variant="default"
                             size="sm"
                             onClick={async () => {
                               try {
-                                // First activate
+                                const res = await fetch(`/api/admin/contracts/${contract.id}/send`, {
+                                  method: "POST",
+                                })
+                                const data = await res.json()
+                                if (res.ok) {
+                                  toast.success("Contract sent to driver!")
+                                  await fetchContracts()
+                                } else {
+                                  toast.error(data.error || "Failed to send contract")
+                                }
+                              } catch (error) {
+                                toast.error("Failed to send contract")
+                              }
+                            }}
+                          >
+                            Send to Driver
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => handleDeleteDraft(contract.id)}
+                              >
+                                <Trash2 className="h-4 w-4 mr-2" />
+                                Delete Draft
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </>
+                      )
+                    }
+                    
+                    // SENT actions
+                    if (isSent) {
+                      return (
+                        <>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handlePreviewContract(contract.id)}
+                          >
+                            <Eye className="h-4 w-4 mr-2" />
+                            View
+                          </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleRejectContract(contract.id)}>
+                                <X className="h-4 w-4 mr-2" />
+                                Reject Contract
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </>
+                      )
+                    }
+                    
+                    // SIGNED BY DRIVER actions
+                    if (isSigned) {
+                      return (
+                        <>
+                          <Button
+                            variant="default"
+                            size="sm"
+                            onClick={async () => {
+                              try {
                                 const activateRes = await fetch(`/api/admin/contracts/${contract.id}/activate`, {
                                   method: "POST",
                                 })
@@ -359,7 +580,6 @@ export default function AdminContractsPage() {
                                   return
                                 }
                                 
-                                // Then generate PDF
                                 const pdfRes = await fetch(`/api/contracts/${contract.id}/generate-signed-pdf`, {
                                   method: "POST",
                                 })
@@ -376,8 +596,30 @@ export default function AdminContractsPage() {
                               }
                             }}
                           >
-                            {nextAction.label}
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Activate Contract
                           </Button>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleRejectContract(contract.id)}>
+                                <X className="h-4 w-4 mr-2" />
+                                Reject Before Activation
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </>
+                      )
+                    }
+                    
+                    // ACTIVE actions
+                    if (isActive) {
+                      return (
+                        <>
                           {contract.signedPdfUrl && (
                             <Button
                               variant="outline"
@@ -388,11 +630,69 @@ export default function AdminContractsPage() {
                               Download PDF
                             </Button>
                           )}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="outline" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem asChild>
+                                <Link href={`/admin/contracts/${contract.id}/edit`}>
+                                  <Edit className="h-4 w-4 mr-2" />
+                                  Modify Terms
+                                </Link>
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {/* TODO: Reassign vehicle */}}>
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                                Reassign Vehicle
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem onClick={() => handleSuspendContract(contract.id)}>
+                                <Pause className="h-4 w-4 mr-2" />
+                                Suspend Contract
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-red-600"
+                                onClick={() => handleEndContract(contract.id)}
+                              >
+                                <X className="h-4 w-4 mr-2" />
+                                End Contract
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </>
                       )
                     }
                     
-                    // Default actions
+                    // ENDED/CANCELLED actions
+                    if (isEnded) {
+                      return (
+                        <>
+                          {contract.signedPdfUrl && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => window.open(contract.signedPdfUrl!, "_blank")}
+                            >
+                              <Download className="h-4 w-4 mr-2" />
+                              Download PDF
+                            </Button>
+                          )}
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {/* TODO: View payments */}}
+                          >
+                            <FileText className="h-4 w-4 mr-2" />
+                            View Payments
+                          </Button>
+                        </>
+                      )
+                    }
+                    
+                    // Default fallback
                     return (
                       <>
                         {contract.signedPdfUrl && (
@@ -404,16 +704,6 @@ export default function AdminContractsPage() {
                             <Download className="h-4 w-4 mr-2" />
                             Download PDF
                           </Button>
-                        )}
-                        {contract.status === "ACTIVE" && (
-                          <Button variant="outline" size="sm" onClick={() => handleEndContract(contract.id)}>
-                            End Contract
-                          </Button>
-                        )}
-                        {!nextAction.action && (
-                          <span className="text-xs text-muted-foreground px-2 py-1 flex items-center">
-                            {nextAction.label}
-                          </span>
                         )}
                       </>
                     )

@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Car, Users, FileCheck, AlertTriangle, Wrench } from "lucide-react";
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
+import { formatZARFromCents } from "@/lib/money";
 
 // Timeout wrapper to prevent hanging
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
@@ -86,7 +87,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
     };
   }
 
-  const formatCurrency = (cents: number) => `R ${(cents / 100).toFixed(2)}`;
+  const formatCurrency = formatZARFromCents;
 
   const overdueAlerts = data.alerts.compliance.filter((a) => a.daysUntil < 0);
   const expiringSoon = data.alerts.compliance.filter((a) => a.daysUntil >= 0 && a.daysUntil <= 30);
@@ -285,7 +286,7 @@ export default async function AdminDashboardPage({ searchParams }: Props) {
                         {payment.paidAt ? new Date(payment.paidAt).toLocaleDateString() : "—"}
                       </p>
                     </div>
-                    <span className="font-bold text-green-600">R {payment.amount.toFixed(2)}</span>
+                    <span className="font-bold text-green-600">{formatZARFromCents(Math.round(payment.amount * 100))}</span>
                   </div>
                 ))}
               </div>

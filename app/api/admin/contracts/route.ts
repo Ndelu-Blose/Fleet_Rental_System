@@ -40,8 +40,23 @@ export async function GET(req: NextRequest) {
             },
           },
         },
-        vehicle: true,
+        vehicle: {
+          select: {
+            id: true,
+            reg: true,
+            make: true,
+            model: true,
+            status: true,
+          },
+        },
         payments: {
+          select: {
+            id: true,
+            amountCents: true,
+            status: true,
+            dueDate: true,
+            paidAt: true,
+          },
           orderBy: {
             dueDate: "desc",
           },

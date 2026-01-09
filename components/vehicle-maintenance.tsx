@@ -11,6 +11,8 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Wrench, Loader2, Calendar, Clock } from "lucide-react"
+import { toast } from "sonner"
+import { formatZARFromCents, parseZARToCents } from "@/lib/money"
 
 interface MaintenanceTask {
   id: string
@@ -78,7 +80,7 @@ export function VehicleMaintenance({ vehicleId, maintenance, onRefresh, autoOpen
           description: formData.description,
           scheduledAt: formData.scheduledAt || null,
           odometerKm: formData.odometerKm ? Number.parseInt(formData.odometerKm) : null,
-          estimatedCostCents: formData.estimatedCostCents ? Number.parseInt(formData.estimatedCostCents) * 100 : null,
+          estimatedCostCents: formData.estimatedCostCents ? parseZARToCents(formData.estimatedCostCents) : null,
         }),
       })
 
@@ -134,7 +136,7 @@ export function VehicleMaintenance({ vehicleId, maintenance, onRefresh, autoOpen
 
   const formatCurrency = (cents: number | null) => {
     if (!cents) return "N/A"
-    return `R ${(cents / 100).toFixed(2)}`
+    return formatZARFromCents(cents)
   }
 
   return (
