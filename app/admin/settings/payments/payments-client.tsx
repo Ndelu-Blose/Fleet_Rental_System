@@ -170,21 +170,75 @@ export default function PaymentsClient() {
             saving={saving}
           />
 
-          <div className="mt-4 space-y-2">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">Status:</span>
-              <StatusBadge configured={configured} />
-            </div>
-            {configStatus && !configStatus.configured && configStatus.missing.length > 0 && (
-              <div className="mt-2 text-xs text-muted-foreground">
-                <p className="font-medium mb-1">Missing requirements:</p>
-                <ul className="list-disc list-inside space-y-0.5">
-                  {configStatus.missing.map((item, idx) => (
-                    <li key={idx}>{item}</li>
-                  ))}
-                </ul>
+          {/* Payment Readiness Summary */}
+          {configStatus && (
+            <div className="mt-4 border rounded-lg p-4 bg-muted/30">
+              <h4 className="text-sm font-medium mb-3">Payment readiness</h4>
+              <div className="space-y-2 text-sm">
+                {/* Company Identity */}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Company identity</span>
+                  <span className={configStatus.missing.some(m => m.includes("Company")) ? "text-muted-foreground" : "font-medium"}>
+                    {configStatus.missing.some(m => m.includes("Company")) ? "Missing" : "Set"}
+                  </span>
+                </div>
+                
+                {/* Payment Provider */}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Payment provider</span>
+                  <span className={configStatus.missing.some(m => m.includes("provider") || m.includes("method")) ? "text-muted-foreground" : "font-medium"}>
+                    {configStatus.missing.some(m => m.includes("provider") || m.includes("method")) ? "Not selected" : settings.mode === "STRIPE" ? "Stripe" : "Manual"}
+                  </span>
+                </div>
+                
+                {/* Currency & Cycle */}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Currency & cycle</span>
+                  <span className={configStatus.missing.some(m => m.includes("Currency") || m.includes("cycle")) ? "text-muted-foreground" : "font-medium"}>
+                    {configStatus.missing.some(m => m.includes("Currency") || m.includes("cycle")) ? "Incomplete" : `${settings.currency} / ${settings.defaultRentCycle}`}
+                  </span>
+                </div>
+                
+                {/* Due Date Logic */}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Due date rules</span>
+                  <span className={configStatus.missing.some(m => m.includes("due") || m.includes("Due")) ? "text-muted-foreground" : "font-medium"}>
+                    {configStatus.missing.some(m => m.includes("due") || m.includes("Due")) ? "Not set" : "Configured"}
+                  </span>
+                </div>
+                
+                {/* Grace Period */}
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">Overdue handling</span>
+                  <span className={configStatus.missing.some(m => m.includes("Grace") || m.includes("grace")) ? "text-muted-foreground" : "font-medium"}>
+                    {configStatus.missing.some(m => m.includes("Grace") || m.includes("grace")) ? "Not set" : `${settings.gracePeriodDays} days grace`}
+                  </span>
+                </div>
               </div>
-            )}
+              
+              {!configStatus.configured && (
+                <div className="mt-3 pt-3 border-t">
+                  <p className="text-xs text-muted-foreground">
+                    <strong>Note:</strong> Drivers cannot be charged until all required items are set.
+                  </p>
+                  {configStatus.missing.length > 0 && (
+                    <ul className="mt-2 text-xs text-muted-foreground list-disc list-inside space-y-0.5">
+                      {configStatus.missing.slice(0, 3).map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                      {configStatus.missing.length > 3 && (
+                        <li>+ {configStatus.missing.length - 3} more</li>
+                      )}
+                    </ul>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+          
+          <div className="mt-4 flex items-center gap-2">
+            <span className="text-sm font-medium">Status:</span>
+            <StatusBadge configured={configured} />
           </div>
         </CardContent>
       </Card>

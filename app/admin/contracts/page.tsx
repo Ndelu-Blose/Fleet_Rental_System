@@ -518,7 +518,7 @@ export default function AdminContractsPage() {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" sideOffset={8}>
                               <DropdownMenuItem
                                 className="text-red-600"
                                 onClick={() => handleDeleteDraft(contract.id)}
@@ -550,7 +550,7 @@ export default function AdminContractsPage() {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" sideOffset={8}>
                               <DropdownMenuItem onClick={() => handleRejectContract(contract.id)}>
                                 <X className="h-4 w-4 mr-2" />
                                 Reject Contract
@@ -604,7 +604,7 @@ export default function AdminContractsPage() {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" sideOffset={8}>
                               <DropdownMenuItem onClick={() => handleRejectContract(contract.id)}>
                                 <X className="h-4 w-4 mr-2" />
                                 Reject Before Activation
@@ -635,7 +635,7 @@ export default function AdminContractsPage() {
                                 <MoreVertical className="h-4 w-4" />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
+                            <DropdownMenuContent align="end" sideOffset={8}>
                               <DropdownMenuItem asChild>
                                 <Link href={`/admin/contracts/${contract.id}/edit`}>
                                   <Edit className="h-4 w-4 mr-2" />

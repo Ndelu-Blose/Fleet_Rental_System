@@ -49,6 +49,10 @@ export async function GET(req: NextRequest) {
     return NextResponse.json(drivers)
   } catch (error) {
     console.error("[v0] Get verification queue error:", error)
-    return NextResponse.json({ error: "Failed to fetch verification queue" }, { status: 500 })
+    const errorMessage = error instanceof Error ? error.message : "Failed to fetch verification queue"
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    )
   }
 }

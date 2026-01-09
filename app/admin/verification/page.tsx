@@ -67,19 +67,42 @@ function AdminVerificationContent() {
         ? `/api/admin/verification?driverId=${driverId}`
         : "/api/admin/verification"
       const res = await fetch(url)
+      
+      // Check if response is ok
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: `HTTP ${res.status}: ${res.statusText}` }))
+        console.error("API error response:", errorData)
+        setDrivers([])
+        setLoading(false)
+        return
+      }
+      
       const data = await res.json()
-      setDrivers(data)
-      if (data.length > 0 && !selectedDriver) {
+      
+      // Ensure data is always an array
+      const driversArray = Array.isArray(data) ? data : []
+      
+      // If there's an error in the response, log it and use empty array
+      if (data.error) {
+        console.error("API error:", data.error)
+        setDrivers([])
+        setLoading(false)
+        return
+      }
+      
+      setDrivers(driversArray)
+      if (driversArray.length > 0 && !selectedDriver) {
         const driverIdParam = searchParams.get("driverId")
         if (driverIdParam) {
-          const driver = data.find((d: Driver) => d.id === driverIdParam)
-          setSelectedDriver(driver || data[0])
+          const driver = driversArray.find((d: Driver) => d.id === driverIdParam)
+          setSelectedDriver(driver || driversArray[0])
         } else {
-          setSelectedDriver(data[0])
+          setSelectedDriver(driversArray[0])
         }
       }
     } catch (error) {
       console.error("Failed to fetch drivers:", error)
+      setDrivers([])
     } finally {
       setLoading(false)
     }

@@ -79,17 +79,26 @@ export async function GET() {
     {
       const completed = paymentConfig.configured
       const canDoNow = true
+      const description =
+        paymentConfig.missing.length > 0
+          ? `Some payment behavior is still undefined: ${paymentConfig.missing[0]}`
+          : paymentConfig.warnings.length > 0
+            ? "Payment rules are configured, but some optional settings are missing."
+            : "Configure payment provider, currency, rent cycle, and due dates."
+      
       checklist.push({
         id: "payments",
         label: "Payment rules",
-        description:
-          paymentConfig.missing.length > 0
-            ? `Complete payment setup: ${paymentConfig.missing[0]}`
-            : "Configure payment method, currency, rent cycle, and due dates.",
+        description,
         completed,
         state: computeState({ completed, canDoNow }),
-        hint: paymentConfig.missing.length > 0 ? paymentConfig.missing[0] : undefined,
-        actionLabel: "Complete payment setup",
+        hint:
+          paymentConfig.missing.length > 0
+            ? paymentConfig.missing[0]
+            : paymentConfig.warnings.length > 0
+              ? paymentConfig.warnings[0]
+              : undefined,
+        actionLabel: completed ? "Review payment setup" : "Complete payment setup",
         actionHref: "/admin/settings/payments",
       })
     }

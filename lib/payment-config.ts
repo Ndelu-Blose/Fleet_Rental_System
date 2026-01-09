@@ -32,15 +32,34 @@ type PaymentSettings = {
 /**
  * Check if payments are fully configured
  * Returns configured status and list of missing requirements
+ * 
+ * Business logic requirements:
+ * 1. Company identity (who receives money)
+ * 2. Payment provider (how money is collected)
+ * 3. Payment collection method (online/manual/hybrid)
+ * 4. Currency and cycle defaults
+ * 5. Due date logic
+ * 6. Grace period and overdue handling
+ * 7. Reminder rules (if enabled)
  */
 export async function checkPaymentConfiguration(): Promise<PaymentConfigStatus> {
   const missing: string[] = []
   const warnings: string[] = []
 
-  // 1. Payment method (required)
+  // 1. Company identity (required - who receives the money)
+  const companyName = await getSetting("company.name", "")
+  const companyEmail = await getSetting("company.email", "")
+  if (!companyName || companyName.trim() === "") {
+    missing.push("Company name not set (required for payment receipts)")
+  }
+  if (!companyEmail || companyEmail.trim() === "") {
+    missing.push("Company email not set (required for payment receipts)")
+  }
+
+  // 2. Payment provider (required)
   const paymentMethod = await getSetting("payments.method", "") || await getSetting("payments.mode", "")
   if (!paymentMethod || (paymentMethod !== "MANUAL" && paymentMethod !== "STRIPE")) {
-    missing.push("Payment method not selected")
+    missing.push("Payment provider not selected")
   }
 
   // 2. Currency (required)
@@ -120,10 +139,43 @@ export async function checkPaymentConfiguration(): Promise<PaymentConfigStatus> 
     }
   }
 
+  // 7. Payment collection method clarity (business requirement)
+  // This checks if the system knows HOW drivers can pay
+  // For now, we infer from payment method, but this could be expanded
+  // to explicitly track: "ONLINE_ONLY", "MANUAL_ALLOWED", "HYBRID"
+  if (paymentMethod === "STRIPE") {
+    // If Stripe is selected, assume online payments are enabled
+    // Could add explicit setting: payments.collectionMethod = "ONLINE_ONLY" | "HYBRID"
+    // For now, this is acceptable
+  } else if (paymentMethod === "MANUAL") {
+    // Manual mode is clear - no online payments
+    // This is acceptable
+  }
+
+  // 8. First payment timing (business requirement)
+  // Currently inferred from contract start date logic
+  // Could add explicit setting: payments.firstPaymentTiming = "BEFORE_ACTIVATION" | "ON_START" | "END_OF_CYCLE"
+  // For now, we assume contracts handle this, but it's worth noting as a potential gap
+  const firstPaymentTiming = await getSetting("payments.firstPaymentTiming", "")
+  if (!firstPaymentTiming) {
+    // Not blocking, but should be noted
+    warnings.push("First payment timing not explicitly set (using contract defaults)")
+  }
+
+  // 9. Payment failure handling (business requirement)
+  // What happens when payment fails? Lock contract? Mark vehicle at risk?
+  // Could add: payments.failureAction = "LOCK_CONTRACT" | "NOTIFY_ONLY" | "MARK_AT_RISK"
+  const failureAction = await getSetting("payments.failureAction", "")
+  if (!failureAction) {
+    // Not blocking, but should be noted
+    warnings.push("Payment failure handling not explicitly defined")
+  }
+
   // Warnings (not blocking, but should be noted)
   if (paymentMethod === "STRIPE") {
     // Check if Stripe keys are configured (this is env-based, not settings-based)
     // We can't check this here, but the UI should show this
+    warnings.push("Verify Stripe API keys are configured in environment variables")
   }
 
   return {

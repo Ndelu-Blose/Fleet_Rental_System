@@ -87,99 +87,86 @@ export function SetupProgressCard({ steps }: { steps: SetupStep[] }) {
 
   return (
     <Card className="border-blue-200">
-      <CardHeader className="flex flex-row items-start justify-between gap-4">
-        <div className="space-y-1">
-          <CardTitle className="text-base">Setup progress</CardTitle>
+      <CardHeader className="space-y-1">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base">Setup</CardTitle>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">
+            Step {done + 1} of {total}
+          </span>
+        </div>
+        {!expanded && nextActionable ? (
+          <p className="text-sm text-muted-foreground">
+            {nextActionable.description || nextActionable.label}
+          </p>
+        ) : (
           <p className="text-sm text-muted-foreground">
             Finish these steps to start renting vehicles and collecting payments.
           </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {nextActionable?.actionHref && nextActionable?.actionLabel ? (
-            <Button asChild size="sm">
-              <Link href={nextActionable.actionHref}>{nextActionable.actionLabel}</Link>
-            </Button>
-          ) : null}
-
-          <Button variant="outline" size="sm" onClick={() => setExpanded((v) => !v)}>
-            {expanded ? (
-              <>
-                Collapse <ChevronUp className="ml-2 h-4 w-4" />
-              </>
-            ) : (
-              <>
-                Expand <ChevronDown className="ml-2 h-4 w-4" />
-              </>
-            )}
-          </Button>
-        </div>
+        )}
       </CardHeader>
 
-      <CardContent className="space-y-4">
-        {/* Summary line */}
-        <div className="flex items-center justify-between text-sm">
-          <span className="font-medium">
-            {done} of {total} completed
-          </span>
-          <span className="text-muted-foreground">{percent}%</span>
-        </div>
-
-        <Progress value={percent} />
-
-        {/* Collapsed "Next step" preview */}
-        {!expanded && nextActionable ? (
-          <div className="rounded-lg border bg-muted/30 p-3">
-            <div className="flex items-start justify-between gap-3">
-              <div className="space-y-1">
-                <div className="flex items-center gap-2">
-                  <StateIcon state={nextActionable.state} />
-                  <span className="font-medium">Next step</span>
-                  <span className={`ml-2 rounded-full border px-2 py-0.5 text-xs ${pillClasses(nextActionable.state)}`}>
-                    {pillLabel(nextActionable.state)}
-                  </span>
-                </div>
-                <div className="text-sm">{nextActionable.label}</div>
-                {nextActionable.hint ? (
-                  <div className="text-xs text-muted-foreground">{nextActionable.hint}</div>
-                ) : null}
-              </div>
-
-              {nextActionable.actionHref && nextActionable.actionLabel ? (
-                <Button asChild size="sm">
-                  <Link href={nextActionable.actionHref}>{nextActionable.actionLabel}</Link>
-                </Button>
-              ) : null}
+      <CardContent className="space-y-3">
+        {/* Progress bar - only show when collapsed */}
+        {!expanded && (
+          <>
+            <div className="flex items-center justify-between text-sm">
+              <span className="font-medium">
+                {done} of {total} completed
+              </span>
+              <span className="text-muted-foreground">{percent}%</span>
             </div>
-          </div>
+            <Progress value={percent} />
+          </>
+        )}
+
+        {/* Mobile-optimized: Show single action button when collapsed */}
+        {!expanded && nextActionable ? (
+          <>
+            {nextActionable.actionHref && nextActionable.actionLabel ? (
+              <Button asChild className="w-full">
+                <Link href={nextActionable.actionHref}>{nextActionable.actionLabel}</Link>
+              </Button>
+            ) : null}
+            <button
+              onClick={() => setExpanded(true)}
+              className="text-sm text-muted-foreground underline underline-offset-4 w-full text-center py-2"
+            >
+              View all setup steps
+            </button>
+          </>
         ) : null}
 
-        {/* Expanded sections */}
-        {expanded ? (
-          <div className="space-y-4">
+        {/* Expanded view */}
+        {expanded && (
+          <>
+            <div className="flex items-center justify-between text-sm mb-2">
+              <span className="font-medium">
+                {done} of {total} completed
+              </span>
+              <span className="text-muted-foreground">{percent}%</span>
+            </div>
+            <Progress value={percent} className="mb-4" />
+
             {/* Next step (expanded) */}
             {nextActionable ? (
               <div className="rounded-lg border border-amber-200 bg-amber-50/40 p-4">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2">
-                      <StateIcon state={nextActionable.state} />
-                      <span className="font-medium">Next step</span>
-                      <span className={`rounded-full border px-2 py-0.5 text-xs ${pillClasses(nextActionable.state)}`}>
-                        {pillLabel(nextActionable.state)}
-                      </span>
-                    </div>
-                    <div className="text-sm font-medium">{nextActionable.label}</div>
-                    {nextActionable.description ? (
-                      <div className="text-xs text-muted-foreground">{nextActionable.description}</div>
-                    ) : null}
-                    {nextActionable.hint ? (
-                      <div className="text-xs text-muted-foreground">{nextActionable.hint}</div>
-                    ) : null}
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <StateIcon state={nextActionable.state} />
+                    <span className="font-medium">Next step</span>
+                    <span className={`rounded-full border px-2 py-0.5 text-xs ${pillClasses(nextActionable.state)}`}>
+                      {pillLabel(nextActionable.state)}
+                    </span>
                   </div>
-
+                  <div className="text-sm font-medium">{nextActionable.label}</div>
+                  {nextActionable.description ? (
+                    <div className="text-xs text-muted-foreground">{nextActionable.description}</div>
+                  ) : null}
+                  {nextActionable.hint ? (
+                    <div className="text-xs text-muted-foreground">{nextActionable.hint}</div>
+                  ) : null}
                   {nextActionable.actionHref && nextActionable.actionLabel ? (
-                    <Button asChild>
+                    <Button asChild className="w-full sm:w-auto">
                       <Link href={nextActionable.actionHref}>{nextActionable.actionLabel}</Link>
                     </Button>
                   ) : null}
@@ -195,9 +182,9 @@ export function SetupProgressCard({ steps }: { steps: SetupStep[] }) {
 
               <div className="space-y-2">
                 {remaining.map((s) => (
-                  <div key={s.id} className="flex items-center justify-between gap-3 rounded-lg border p-3">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
+                  <div key={s.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border p-3">
+                    <div className="space-y-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
                         <StateIcon state={s.state} />
                         <div className="text-sm font-medium">{s.label}</div>
                         <span className={`rounded-full border px-2 py-0.5 text-xs ${pillClasses(s.state)}`}>
@@ -208,7 +195,7 @@ export function SetupProgressCard({ steps }: { steps: SetupStep[] }) {
                     </div>
 
                     {s.state === "ACTION" && s.actionHref && s.actionLabel ? (
-                      <Button asChild variant="outline" size="sm">
+                      <Button asChild variant="outline" size="sm" className="w-full sm:w-auto">
                         <Link href={s.actionHref}>{s.actionLabel}</Link>
                       </Button>
                     ) : (
@@ -230,15 +217,22 @@ export function SetupProgressCard({ steps }: { steps: SetupStep[] }) {
                 <div className="mt-3 space-y-2">
                   {completed.map((s) => (
                     <div key={s.id} className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CheckCircle2 className="h-4 w-4 text-green-600" />
+                      <CheckCircle2 className="h-4 w-4 text-green-600 flex-shrink-0" />
                       <span>{s.label}</span>
                     </div>
                   ))}
                 </div>
               </details>
             )}
-          </div>
-        ) : null}
+
+            <button
+              onClick={() => setExpanded(false)}
+              className="text-sm text-muted-foreground underline underline-offset-4 w-full text-center py-2"
+            >
+              Collapse
+            </button>
+          </>
+        )}
       </CardContent>
     </Card>
   )
